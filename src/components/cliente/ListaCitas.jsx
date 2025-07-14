@@ -15,6 +15,8 @@ export default function ListaCitas({ citas, errores, cancelarCitaCliente, format
   const upcomingStates = ["Pendiente", "Confirmada", "En proceso"];
   const pastStates = ["Completada", "Cancelada", "No asistió"];
 
+  console.log("🔎 Citas recibidas:", citas);
+
   const now = new Date();
   const proximas = citas.filter(c =>
     upcomingStates.includes(c.estado_nombre) && new Date(c.fecha_hora_inicio) >= now

@@ -8,17 +8,13 @@ import {
   cancelarCita,
 } from "../../service/reservacionService";
 import Alerta from "../../components/alertas/Alerta";
-
 import FormularioReservacion from "../../components/cliente/FormularioReservacion";
-import ListaCitas from "../../components/cliente/ListaCitas";
 
 function Reservar() {
-  // (aquí va toda la lógica y estados original)
-
   const [servicios, setServicios] = useState([]);
   const [citas, setCitas] = useState([]);
   const [empleados, setEmpleados] = useState([]);
-  const [horarios, setHorarios] = useState([]);
+  const [horariosPorEmpleado, setHorariosPorEmpleado] = useState({});
 
   const [errores, setErrores] = useState({
     servicios: null,
@@ -37,28 +33,12 @@ function Reservar() {
   const [mensaje, setMensaje] = useState(null);
   const [tipoMensaje, setTipoMensaje] = useState("info");
 
-  // Funciones setError y clearError igual...
-
   const setError = (campo, mensaje) => {
     setErrores((prev) => ({ ...prev, [campo]: mensaje }));
   };
   const clearError = (campo) => {
     setErrores((prev) => ({ ...prev, [campo]: null }));
   };
-
-  const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleString("es-EC", {
-      timeZone: "America/Guayaquil",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
-  // useEffects y lógica original sin cambios
 
   useEffect(() => {
     getServiciosDisponibles()
@@ -81,13 +61,6 @@ function Reservar() {
         clearError("empleados");
       })
       .catch(() => setError("empleados", "Error al cargar empleados"));
-
-    getHorariosDisponibles({ empleadoId: 1, fecha: "2025-07-01", servicios: [1] })
-      .then((data) => {
-        setHorarios(data);
-        clearError("horarios");
-      })
-      .catch(() => setError("horarios", "Error al cargar horarios"));
   }, []);
 
   useEffect(() => {
@@ -112,8 +85,11 @@ function Reservar() {
       fechaSeleccionada.setHours(0, 0, 0, 0);
 
       if (fechaSeleccionada < hoy) {
-        setError("fecha", "No se puede seleccionar una fecha pasada");
-        setHorarios([]);
+        setError("fecha", "Fuera de horario laboral los domingos después de las 14:00");
+        setHorariosPorEmpleado((prev) => ({
+          ...prev,
+          [formEmpleadoId]: [],
+        }));
         return;
       } else {
         clearError("fecha");
@@ -126,6 +102,7 @@ function Reservar() {
       })
         .then((data) => {
           const ahora = new Date();
+
           const disponibles = data.filter((h) => {
             const horaInicio = new Date(`${formFecha}T${h.inicio}`);
             if (formFecha === ahora.toISOString().slice(0, 10)) {
@@ -134,15 +111,33 @@ function Reservar() {
             return true;
           });
 
+          // Filtra solo citas del empleado seleccionado en esa fecha
           const ocupadas = citas
-            .filter((c) => c.fecha_hora_inicio.startsWith(formFecha))
+            .filter(
+              (c) =>
+                c.fecha_hora_inicio.startsWith(formFecha) &&
+                c.empleado_id === parseInt(formEmpleadoId)
+            )
             .map((c) => new Date(c.fecha_hora_inicio).toTimeString().slice(0, 5));
 
-          const finalDisponibles = disponibles.filter((h) => !ocupadas.includes(h.inicio));
-          setHorarios(finalDisponibles);
+          const finalDisponibles = disponibles.filter(
+            (h) => !ocupadas.includes(h.inicio)
+          );
+
+          setHorariosPorEmpleado((prev) => ({
+            ...prev,
+            [formEmpleadoId]: finalDisponibles,
+          }));
+
           clearError("horarios");
         })
-        .catch(() => setError("horarios", "Error al cargar horarios"));
+        .catch(() => {
+          setHorariosPorEmpleado((prev) => ({
+            ...prev,
+            [formEmpleadoId]: [],
+          }));
+          setError("horarios", "Error al cargar horarios");
+        });
     }
   }, [formEmpleadoId, formFecha, formServicioId, citas]);
 
@@ -191,16 +186,24 @@ function Reservar() {
   }, [mensaje]);
 
   return (
-    <div className=" p-6 bg-black  shadow-lg">
-          <h2 className="text-4xl font-bold text-white mb-4 text-center">GOD MEETS 2.0 BARBERSHOP</h2>
-  
+    <div className="p-6 bg-black shadow-lg">
+      <h2 className="text-4xl font-bold text-white mb-4 text-center">
+        GOD MEETS 2.0 BARBERSHOP
+      </h2>
 
       {mensaje && <Alerta tipo={tipoMensaje} mensaje={mensaje} />}
 
       <FormularioReservacion
+        key={formEmpleadoId} // clave para forzar re-render al cambiar empleado
         servicios={servicios}
         empleados={empleados}
-        horarios={horarios}
+        horarios={horariosPorEmpleado[formEmpleadoId] || []}
+        setHorarios={(newHorarios) =>
+          setHorariosPorEmpleado((prev) => ({
+            ...prev,
+            [formEmpleadoId]: newHorarios,
+          }))
+        }
         errores={errores}
         formServicioId={formServicioId}
         setFormServicioId={setFormServicioId}
@@ -210,13 +213,13 @@ function Reservar() {
         setFormFecha={setFormFecha}
         formHorario={formHorario}
         setFormHorario={setFormHorario}
-        formTotal={formTotal}
         handleSubmit={handleSubmit}
+        setError={setError}
+        clearError={clearError}
+        getHorariosDisponibles={getHorariosDisponibles}
       />
-
- 
     </div>
   );
 }
 
-export default Reservar; 
+export default Reservar;
