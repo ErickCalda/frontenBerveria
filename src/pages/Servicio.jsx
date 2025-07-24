@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { obtenerServicios } from "../service/servicioAPI";
@@ -8,6 +9,7 @@ export default function Servicios() {
   const [servicios, setServicios] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const tituloRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -44,13 +46,18 @@ export default function Servicios() {
     cargarServicios();
   }, []);
 
-  // Extraer categorías únicas dinámicamente
+  // Categorías únicas para filtro
   const categoriasUnicas = [...new Set(servicios.map((s) => s.categoria_nombre))];
 
-  // Filtrar servicios según categoría seleccionada
+  // Servicios filtrados según categoría seleccionada
   const serviciosFiltrados = categoriaSeleccionada
     ? servicios.filter((s) => s.categoria_nombre === categoriaSeleccionada)
     : servicios;
+
+  // Función para manejar la reserva - redirige a la ruta /Reservar
+  const handleReservar = () => {
+    navigate("/Reservar");
+  };
 
   return (
     <section
@@ -108,7 +115,8 @@ export default function Servicios() {
           <div className="flex gap-6">
             {serviciosFiltrados.map((serv) => (
               <div key={serv.id} className="flex-shrink-0">
-                <ServicioCard servicio={serv} />
+                {/* Pasamos la función handleReservar para que el botón reserve */}
+                <ServicioCard servicio={serv} onReservar={handleReservar} />
               </div>
             ))}
           </div>

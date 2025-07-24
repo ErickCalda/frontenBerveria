@@ -1,156 +1,380 @@
-import React, { useState, useEffect } from "react";
-import { FaCalendarAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { gsap } from "gsap";
 import citaService from "../../service/citaService";
-import FormularioCrearCita from "../../components/AdminMenu/FormularioCrearCita";
-import SelectorEstado from "../../components/AdminMenu/SelectorEstado";
 
-export default function Dashboard() {
-  const [collapsed, setCollapsed] = useState(true);
-  const [showText, setShowText] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState("w-16");
-
-  const [citasHoy, setCitasHoy] = useState([]);
+export default function AdminPanel() {
+  const [citas, setCitas] = useState([]);
+  const [estados, setEstados] = useState([]);
   const [loadingCitas, setLoadingCitas] = useState(true);
-  const [mostrarFormularioCrear, setMostrarFormularioCrear] = useState(false);
+  const [actualizandoEstado, setActualizandoEstado] = useState(null);
+  const [mostrarTodas, setMostrarTodas] = useState(false);
+  const [fechaFiltro, setFechaFiltro] = useState("");
 
-  useEffect(() => {
-    const handleResize = () => {
-      setCollapsed(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const obtenerFechaHoy = useCallback(() => new Date().toISOString().split("T")[0], []);
 
-  useEffect(() => {
-    if (collapsed) {
-      setShowText(false);
-      setSidebarWidth("w-16");
-    } else {
-      setSidebarWidth("w-64");
-      const timeout = setTimeout(() => setShowText(true), 300);
-      return () => clearTimeout(timeout);
-    }
-  }, [collapsed]);
-
-  const obtenerFechaHoy = () => {
-    const hoy = new Date();
-    const yyyy = hoy.getFullYear();
-    const mm = String(hoy.getMonth() + 1).padStart(2, "0");
-    const dd = String(hoy.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  const cargarCitasHoy = () => {
+  const cargarCitas = useCallback(() => {
     setLoadingCitas(true);
-    const fechaHoy = obtenerFechaHoy();
+    const filtros = !mostrarTodas && !fechaFiltro
+      ? { fecha: obtenerFechaHoy() }
+      : fechaFiltro ? { fecha: fechaFiltro } : {};
 
     citaService
-      .obtenerCitas({ fecha: fechaHoy }, { headers: { "Cache-Control": "no-cache" } })
-      .then((res) => {
-        if (res.data && res.data.data) {
-          setCitasHoy(res.data.data);
-        } else {
-          setCitasHoy([]);
-        }
-      })
+      .obtenerCitas(filtros)
+      .then((res) => setCitas(res.data?.data || []))
       .catch((err) => {
-        console.error("Error al cargar citas de hoy:", err);
-        setCitasHoy([]);
+        console.error("Error al cargar citas:", err);
+        setCitas([]);
       })
       .finally(() => setLoadingCitas(false));
-  };
+  }, [mostrarTodas, fechaFiltro, obtenerFechaHoy]);
 
   useEffect(() => {
-    cargarCitasHoy();
+    cargarCitas();
+  }, [cargarCitas]);
+
+  useEffect(() => {
+    citaService
+      .obtenerEstadosCitas()
+      .then((res) => setEstados(res.data || []))
+      .catch((err) => {
+        console.error("Error al cargar estados:", err);
+        setEstados([]);
+      });
   }, []);
 
+  const actualizarEstado = useCallback((citaId, nuevoEstado) => {
+    setActualizandoEstado(citaId);
+    citaService
+      .cambiarEstadoCita(citaId, Number(nuevoEstado))
+      .then(() => cargarCitas())
+      .catch((err) => {
+        console.error("Error al actualizar estado:", err);
+        alert("No se pudo actualizar el estado");
+      })
+      .finally(() => setActualizandoEstado(null));
+  }, [cargarCitas]);
+
+  const citasAgrupadas = useMemo(() => {
+    return citas.reduce((grupos, cita) => {
+      const estado = cita.estado_nombre || "Otro";
+      if (estado.toLowerCase() === "cancelada") return grupos;
+      if (!grupos[estado]) grupos[estado] = [];
+      grupos[estado].push(cita);
+      return grupos;
+    }, {});
+  }, [citas]);
+
+  const seccionesRefs = useRef({});
+  const flechasRefs = useRef({});
+
+  // Estado para detectar si cada sección tiene scroll vertical
+  const [hasScroll, setHasScroll] = useState({});
+  // Estado para controlar si la flecha debe mostrarse (si no está al fondo)
+  const [flechaVisible, setFlechaVisible] = useState({});
+
+  useEffect(() => {
+    const checksHasScroll = {};
+
+    Object.entries(seccionesRefs.current).forEach(([key, el]) => {
+      if (!el) return;
+
+      const tieneScrollVertical = el.scrollHeight > el.clientHeight;
+      checksHasScroll[key] = tieneScrollVertical;
+    });
+
+    setHasScroll(checksHasScroll);
+  }, [citas]);
+
+  // Efecto para agregar event listeners de scroll para controlar visibilidad de flechas
+  useEffect(() => {
+    const handlers = [];
+
+    Object.entries(seccionesRefs.current).forEach(([key, el]) => {
+      if (!el) return;
+
+      const onScroll = () => {
+        const scrollBottom = el.scrollTop + el.clientHeight;
+        const atBottom = scrollBottom >= el.scrollHeight - 1; // tolerancia 1px
+        setFlechaVisible((prev) => ({ ...prev, [key]: !atBottom }));
+      };
+
+      // Ejecutar al montar para estado inicial
+      onScroll();
+
+      el.addEventListener("scroll", onScroll);
+      handlers.push(() => el.removeEventListener("scroll", onScroll));
+    });
+
+    return () => {
+      handlers.forEach((remove) => remove());
+    };
+  }, [citas]);
+
+  useEffect(() => {
+    Object.entries(flechasRefs.current).forEach(([key, el]) => {
+      if (el && hasScroll[key]) {
+        gsap.to(el, {
+          y: -8,
+          // opacity: 0.6,  <--- comentar o eliminar esta línea
+          repeat: -1,
+          yoyo: true,
+          ease: "power1.inOut",
+          duration: 1.2,
+          overwrite: "auto",
+        });
+      } else if (el) {
+        gsap.killTweensOf(el);
+        gsap.set(el, { y: 0, opacity: 0 });  // También ajustar para no forzar opacidad 0
+      }
+    });
+  }, [hasScroll]);
+  
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      Object.values(seccionesRefs.current).forEach((el, i) => {
+        if (el) {
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 20, scale: 0.97 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              ease: "power2.out",
+              delay: i * 0.12,
+              duration: 0.6,
+            }
+          );
+        }
+      });
+    });
+    return () => ctx.revert();
+  }, [citasAgrupadas]);
+
+  const scrollDown = (estado) => {
+    const container = seccionesRefs.current[estado];
+    if (container) {
+      container.scrollBy({ top: 100, behavior: "smooth" });
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-[#121212] text-white font-sans">
-      {/* Sidebar */}
-      <aside className={`flex flex-col bg-[#1e1e1e] p-4 transition-all duration-300 ease-in-out ${sidebarWidth}`}>
-        <button
-          className="self-end mb-6 p-2 hover:bg-gray-700 rounded cursor-pointer"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+    <div
+      className="flex min-h-screen bg-[#0d0d0d] text-white font-serif"
+      style={{
+        fontFamily: "'Merriweather', serif",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+      }}
+    >
+      <main className="flex-1 p-4 md:p-6 space-y-6">
+        <h2
+          className="text-3xl font-bold text-[#d4af37] tracking-wide select-none"
+          style={{ fontFamily: "'Playfair Display', serif" }}
         >
-          {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
-        </button>
+          Panel de Citas
+        </h2>
 
-        {!collapsed && (
-          <div className="flex flex-col items-center mb-8 transition-opacity duration-300 ease-in-out">
-            <span className="font-bold text-lg">GOD MEETS 2.0</span>
-            <span className="text-xs">BARBERSHOP</span>
-          </div>
-        )}
-
-        <nav className="flex-1 flex flex-col gap-3">
-          <NavItem
-            icon={<FaCalendarAlt />}
-            label="Citas"
-            showText={showText}
-            onClick={() => setMostrarFormularioCrear(true)}
-          />
-        </nav>
-      </aside>
-
-      {/* Contenido */}
-      <main className="flex-1 p-4 md:p-6 space-y-6 overflow-auto">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
-
-        {mostrarFormularioCrear ? (
-          <FormularioCrearCita
-            onClose={() => setMostrarFormularioCrear(false)}
-            recargarCitas={cargarCitasHoy}
-          />
-        ) : (
-          <Card title="Citas de Hoy">
-            {loadingCitas ? (
-              <p>Cargando citas...</p>
-            ) : citasHoy.length === 0 ? (
-              <p>No hay citas para hoy.</p>
-            ) : (
-              <ul className="max-h-[400px] overflow-auto space-y-4">
-                {citasHoy.map((cita) => (
-                  <li key={cita.id} className="border-b border-zinc-700 pb-2">
-                    <p><strong>Cliente:</strong> {cita.cliente_nombre}</p>
-                    <p><strong>Servicios:</strong> {cita.servicios}</p>
-                    <p><strong>Hora:</strong> {new Date(cita.fecha_hora_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    <p>
-                      <strong>Estado:</strong>{" "}
-                      <span style={{ color: cita.estado_color }}>{cita.estado_nombre}</span>
-                    </p>
-                    <SelectorEstado
-                      citaId={cita.id}
-                      estadoActual={cita.estado_id}
-                      onActualizar={cargarCitasHoy}
-                    />
-                  </li>
-                ))}
-              </ul>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <label
+              htmlFor="fechaFiltro"
+              className="text-sm font-medium select-none"
+              style={{ fontFamily: "'Merriweather', serif" }}
+            >
+              Filtrar por fecha:
+            </label>
+            <input
+              id="fechaFiltro"
+              type="date"
+              className="bg-[#1a1a1a] text-white px-3 py-1 rounded border border-[#333] focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+              value={fechaFiltro}
+              onChange={(e) => setFechaFiltro(e.target.value)}
+              style={{ fontFamily: "'Oswald', sans-serif" }}
+            />
+            {fechaFiltro && (
+              <button
+                onClick={() => setFechaFiltro("")}
+                className="text-sm text-red-400 hover:text-red-300 ml-2 select-none transition-colors duration-200"
+                type="button"
+                style={{ fontFamily: "'Oswald', sans-serif" }}
+              >
+                Limpiar
+              </button>
             )}
-          </Card>
-        )}
+          </div>
+
+          <button
+            onClick={() => setMostrarTodas((prev) => !prev)}
+            className="bg-[#d4af37] text-black px-4 py-2 rounded hover:bg-[#c49c27] transition-all duration-200 text-sm font-semibold shadow select-none focus:outline-none focus:ring-2 focus:ring-[#c49c27]"
+            type="button"
+            style={{ fontFamily: "'Oswald', sans-serif" }}
+          >
+            {mostrarTodas ? "Ver solo citas de hoy" : "Ver todas las citas"}
+          </button>
+        </div>
+
+        <Card
+          title={
+            fechaFiltro
+              ? `Citas del ${fechaFiltro}`
+              : mostrarTodas
+                ? "Todas las Citas"
+                : "Citas de Hoy"
+          }
+        >
+        {loadingCitas ? (
+  <div className="spinner-container" aria-label="Cargando citas" role="status">
+    <div className="spinner" />
+  </div>
+) : Object.keys(citasAgrupadas).length === 0 ? (
+  <p className="text-gray-400 select-none" style={{ fontFamily: "'Merriweather', serif" }}>
+    No hay citas.
+  </p>
+          ) : Object.keys(citasAgrupadas).length === 0 ? (
+            <p className="text-gray-400 select-none" style={{ fontFamily: "'Merriweather', serif" }}>
+              No hay citas.
+            </p>
+          ) : (
+            Object.entries(citasAgrupadas).map(([estado, citasPorEstado]) => (
+              <div
+                key={estado}
+                ref={(el) => (seccionesRefs.current[estado] = el)}
+                className="mb-6 rounded-xl border-2 relative"
+                style={{
+                  maxHeight: "320px",
+                  overflowY: "auto",
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  borderColor: citasPorEstado[0]?.estado_color || "#d4af37",
+                  boxShadow: `0 0 0 0.5px ${citasPorEstado[0]?.estado_color || "#d4af37"}aa`,
+                  fontFamily: "'Merriweather', serif",
+                }}
+              >
+                <h4
+                  className="text-xl font-semibold capitalize mb-3 p-3"
+                  style={{
+                    color: citasPorEstado[0]?.estado_color || "#d4af37",
+                    fontFamily: "'Playfair Display', serif",
+                  }}
+                >
+                  {estado}
+                </h4>
+                <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 px-3 pb-3">
+                  {citasPorEstado.map((cita) => (
+                    <CitaCard
+                      key={cita.id}
+                      cita={cita}
+                      estados={estados}
+                      actualizarEstado={actualizarEstado}
+                      actualizando={actualizandoEstado === cita.id}
+                    />
+                  ))}
+                </ul>
+
+                {hasScroll[estado] && citasPorEstado.length > 1 && (
+  <div
+    ref={(el) => (flechasRefs.current[estado] = el)}
+    onClick={() => scrollDown(estado)}
+    className="cursor-pointer sticky bottom-2 select-none z-10 flex justify-center transition-opacity duration-500 ease-in-out"
+    style={{
+      width: "100%",
+      fontSize: "28px",
+      userSelect: "none",
+      filter: "drop-shadow(0 0 4px rgba(255, 255, 255, 0.4)) blur(0.5px)",
+      opacity: flechaVisible[estado] ? 0.9 : 0,
+      pointerEvents: flechaVisible[estado] ? "auto" : "none",
+      lineHeight: 1,
+    }}
+    aria-label={`Desplazar hacia abajo en sección ${estado}`}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        scrollDown(estado);
+      }
+    }}
+  >
+    ▼
+  </div>
+)}
+
+              </div>
+            ))
+          )}
+        </Card>
       </main>
+
+      <style>{`
+        div::-webkit-scrollbar {
+          width: 0px;
+          height: 0px;
+        }
+      `}</style>
     </div>
   );
 }
 
-const NavItem = ({ icon, label, showText, onClick }) => (
-  <div
-    onClick={onClick}
-    className="flex items-center gap-3 p-2 hover:bg-[#2c2c2c] rounded cursor-pointer select-none"
+const Card = React.memo(({ title, children }) => (
+  <section
+    className="bg-[#121212] p-6 rounded-xl shadow-lg border border-[#2a2a2a] animate-fadeIn"
+    role="region"
+    aria-label={title}
+    style={{ fontFamily: "'Merriweather', serif" }}
   >
-    <div className="text-lg">{icon}</div>
-    <span className={`text-sm transition-opacity duration-300 ease-in-out ${showText ? "opacity-100" : "opacity-0"}`}>
-      {label}
-    </span>
-  </div>
-);
-
-const Card = ({ title, children }) => (
-  <div className="bg-[#1e1e1e] p-4 rounded shadow text-sm">
-    <h3 className="text-lg font-semibold mb-3">{title}</h3>
+    <h3
+      className="text-2xl font-semibold mb-4 text-[#d4af37] select-none"
+      style={{ fontFamily: "'Playfair Display', serif" }}
+    >
+      {title}
+    </h3>
     {children}
-  </div>
-);
+  </section>
+));
+
+const CitaCard = React.memo(({ cita, estados, actualizarEstado, actualizando }) => {
+  const borderColor = cita.estado_color || "#555";
+
+  return (
+    <li
+      className="rounded-lg p-4 shadow-md border-l-8 transition-all duration-300"
+      style={{
+        borderLeftColor: borderColor,
+        backgroundColor: "#1a1a1a",
+        border: `1px solid #2a2a2a`,
+        fontFamily: "'Merriweather', serif",
+      }}
+    >
+      <div className="flex items-center mb-3 gap-2">
+        <span className="w-4 h-4 rounded-full" style={{ backgroundColor: borderColor }} />
+        <strong className="text-[#d4af37] text-lg select-none" style={{ fontFamily: "'Playfair Display', serif" }}>
+          {cita.estado_nombre}
+        </strong>
+      </div>
+
+      <p><strong className="text-[#d4af37] select-none">Cliente:</strong> {cita.cliente_nombre}</p>
+      <p><strong className="text-[#d4af37] select-none">Empleado:</strong> {cita.empleado_nombre}</p>
+      <p><strong className="text-[#d4af37] select-none">Servicios:</strong> {cita.servicios}</p>
+      <p>
+        <strong className="text-[#d4af37] select-none">Hora:</strong>{" "}
+        {new Date(cita.fecha_hora_inicio).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </p>
+
+      <select
+        className="w-full bg-[#2a2a2a] text-white mt-4 p-2 rounded border border-[#444] focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+        value={String(cita.estado_id)}
+        disabled={actualizando}
+        onChange={(e) => actualizarEstado(cita.id, e.target.value)}
+        aria-label={`Cambiar estado de la cita con ${cita.cliente_nombre}`}
+        style={{ fontFamily: "'Oswald', sans-serif" }}
+      >
+        {estados.map((estado) => (
+          <option key={estado.id} value={estado.id}>
+            {estado.nombre}
+          </option>
+        ))}
+      </select>
+    </li>
+  );
+});

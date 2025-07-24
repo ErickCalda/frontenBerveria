@@ -1,4 +1,4 @@
-export default function ServicioCard({ servicio }) {
+export default function ServicioCard({ servicio, onReservar }) {
   return (
     <div
       className="
@@ -7,7 +7,7 @@ export default function ServicioCard({ servicio }) {
         bg-[#2a2a2a] rounded-lg p-4 shadow-lg flex-shrink-0
       "
     >
-        {servicio.imagen ? (
+      {servicio.imagen ? (
         <video
           src={servicio.imagen}
           autoPlay
@@ -45,6 +45,7 @@ export default function ServicioCard({ servicio }) {
         </p>
 
         <button
+          onClick={onReservar}
           className="mt-2 px-4 py-2 rounded-md font-semibold transition-transform hover:scale-105 bg-yellow-400 text-black shadow-md"
         >
           Reservar ahora

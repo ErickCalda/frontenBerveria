@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   getServiciosDisponibles,
   getMisCitas,
@@ -15,14 +15,9 @@ function Reservar() {
   const [citas, setCitas] = useState([]);
   const [empleados, setEmpleados] = useState([]);
   const [horariosPorEmpleado, setHorariosPorEmpleado] = useState({});
-
-  const [errores, setErrores] = useState({
-    servicios: null,
-    citas: null,
-    empleados: null,
-    horarios: null,
-    fecha: null,
-  });
+  const [errores, setErrores] = useState({});
+  const [mensaje, setMensaje] = useState(null);
+  const [tipoMensaje, setTipoMensaje] = useState("info");
 
   const [formServicioId, setFormServicioId] = useState("");
   const [formEmpleadoId, setFormEmpleadoId] = useState("");
@@ -30,159 +25,188 @@ function Reservar() {
   const [formHorario, setFormHorario] = useState("");
   const [formTotal, setFormTotal] = useState(0);
 
-  const [mensaje, setMensaje] = useState(null);
-  const [tipoMensaje, setTipoMensaje] = useState("info");
-
-  const setError = (campo, mensaje) => {
+  // Función para setear error
+  const setError = useCallback((campo, mensaje) => {
     setErrores((prev) => ({ ...prev, [campo]: mensaje }));
-  };
-  const clearError = (campo) => {
-    setErrores((prev) => ({ ...prev, [campo]: null }));
-  };
+  }, []);
 
+  const clearError = useCallback((campo) => {
+    setErrores((prev) => {
+      if (!prev[campo]) return prev;
+      const nuevo = { ...prev };
+      delete nuevo[campo];
+      return nuevo;
+    });
+  }, []);
+
+  // Carga inicial paralela
   useEffect(() => {
-    getServiciosDisponibles()
-      .then((data) => {
-        setServicios(data);
-        clearError("servicios");
+    Promise.all([
+      getServiciosDisponibles(),
+      getMisCitas(),
+      getEmpleadosDisponibles([1]),
+    ])
+      .then(([serviciosData, citasData, empleadosData]) => {
+        setServicios(serviciosData);
+        setCitas(citasData);
+        setEmpleados(empleadosData);
+        setErrores({});
       })
-      .catch(() => setError("servicios", "Error al cargar servicios"));
+      .catch(() => {
+        setErrores({
+          servicios: "Error al cargar servicios",
+          citas: "Error al cargar citas",
+          empleados: "Error al cargar empleados",
+        });
+      });
+  }, []);
 
-    getMisCitas()
-      .then((data) => {
-        setCitas(data);
-        clearError("citas");
-      })
-      .catch(() => setError("citas", "Error al cargar citas"));
+  // Actualizar empleados y total cuando cambia servicio
+  useEffect(() => {
+    if (!formServicioId) return;
 
-    getEmpleadosDisponibles([1])
+    getEmpleadosDisponibles([parseInt(formServicioId)])
       .then((data) => {
         setEmpleados(data);
         clearError("empleados");
       })
       .catch(() => setError("empleados", "Error al cargar empleados"));
-  }, []);
 
-  useEffect(() => {
-    if (formServicioId) {
-      getEmpleadosDisponibles([parseInt(formServicioId)])
-        .then((data) => {
-          setEmpleados(data);
-          clearError("empleados");
-        })
-        .catch(() => setError("empleados", "Error al cargar empleados"));
+    const servicio = servicios.find((s) => s.id === parseInt(formServicioId));
+    setFormTotal(servicio ? servicio.precio : 0);
+  }, [formServicioId, servicios, clearError, setError]);
 
-      const servicio = servicios.find((s) => s.id === parseInt(formServicioId));
-      if (servicio) setFormTotal(servicio.precio);
+  // Obtener horarios disponibles memorizando datos filtrados para evitar cálculos redundantes
+  const cargarHorariosDisponibles = useCallback(async () => {
+    if (!formEmpleadoId || !formFecha || !formServicioId) {
+      setHorariosPorEmpleado((prev) => ({ ...prev, [formEmpleadoId]: [] }));
+      return;
     }
-  }, [formServicioId, servicios]);
 
-  useEffect(() => {
-    if (formEmpleadoId && formFecha && formServicioId) {
-      const hoy = new Date();
-      const fechaSeleccionada = new Date(formFecha);
-      hoy.setHours(0, 0, 0, 0);
-      fechaSeleccionada.setHours(0, 0, 0, 0);
+    const ahora = new Date();
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const isoHoy = hoy.toISOString().slice(0, 10);
 
-      if (fechaSeleccionada < hoy) {
-        setError("fecha", "Fuera de horario laboral los domingos después de las 14:00");
-        setHorariosPorEmpleado((prev) => ({
-          ...prev,
-          [formEmpleadoId]: [],
-        }));
-        return;
-      } else {
-        clearError("fecha");
-      }
+    if (formFecha < isoHoy) {
+      setError("fecha", "No se pueden reservar fechas anteriores");
+      setHorariosPorEmpleado((prev) => ({ ...prev, [formEmpleadoId]: [] }));
+      return;
+    }
 
-      getHorariosDisponibles({
+    if (
+      formFecha === isoHoy &&
+      ahora.getDay() === 0 &&
+      ahora.getHours() >= 14
+    ) {
+      setError(
+        "fecha",
+        "Fuera de horario laboral los domingos después de las 14:00"
+      );
+      setHorariosPorEmpleado((prev) => ({ ...prev, [formEmpleadoId]: [] }));
+      return;
+    }
+
+    clearError("fecha");
+
+    try {
+      const data = await getHorariosDisponibles({
         empleadoId: parseInt(formEmpleadoId),
         fecha: formFecha,
         servicios: [parseInt(formServicioId)],
-      })
-        .then((data) => {
-          const ahora = new Date();
-
-          const disponibles = data.filter((h) => {
-            const horaInicio = new Date(`${formFecha}T${h.inicio}`);
-            if (formFecha === ahora.toISOString().slice(0, 10)) {
-              return horaInicio > ahora;
-            }
-            return true;
-          });
-
-          // Filtra solo citas del empleado seleccionado en esa fecha
-          const ocupadas = citas
-            .filter(
-              (c) =>
-                c.fecha_hora_inicio.startsWith(formFecha) &&
-                c.empleado_id === parseInt(formEmpleadoId)
-            )
-            .map((c) => new Date(c.fecha_hora_inicio).toTimeString().slice(0, 5));
-
-          const finalDisponibles = disponibles.filter(
-            (h) => !ocupadas.includes(h.inicio)
-          );
-
-          setHorariosPorEmpleado((prev) => ({
-            ...prev,
-            [formEmpleadoId]: finalDisponibles,
-          }));
-
-          clearError("horarios");
-        })
-        .catch(() => {
-          setHorariosPorEmpleado((prev) => ({
-            ...prev,
-            [formEmpleadoId]: [],
-          }));
-          setError("horarios", "Error al cargar horarios");
-        });
-    }
-  }, [formEmpleadoId, formFecha, formServicioId, citas]);
-
-  const cancelarCitaCliente = async (id) => {
-    try {
-      await cancelarCita(id);
-      setCitas((prev) => prev.filter((c) => c.id !== id));
-      setTipoMensaje("success");
-      setMensaje("Cita cancelada correctamente");
-    } catch {
-      setTipoMensaje("error");
-      setMensaje("No se pudo cancelar la cita");
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const [inicio, fin] = formHorario.split("-");
-    try {
-      await procesarReservacion({
-        empleadoId: parseInt(formEmpleadoId),
-        servicios: [{ id: parseInt(formServicioId), cantidad: 1 }],
-        fecha: formFecha,
-        horario: { inicio, fin },
-        total: formTotal,
       });
 
-      setTipoMensaje("success");
-      setMensaje("Cita creada correctamente");
+      // Filtrar horarios que ya pasaron para hoy
+      const disponibles = data.filter((h) => {
+        const horaInicio = new Date(`${formFecha}T${h.inicio}`);
+        if (formFecha === isoHoy) {
+          return horaInicio > ahora;
+        }
+        return true;
+      });
 
-      const nuevas = await getMisCitas();
-      setCitas(nuevas);
+      // Horarios ocupados solo del empleado en la fecha
+      const ocupadasSet = new Set(
+        citas
+          .filter(
+            (c) =>
+              c.fecha_hora_inicio.startsWith(formFecha) &&
+              c.empleado_id === parseInt(formEmpleadoId)
+          )
+          .map((c) => new Date(c.fecha_hora_inicio).toTimeString().slice(0, 5))
+      );
+
+      const finalDisponibles = disponibles.filter(
+        (h) => !ocupadasSet.has(h.inicio)
+      );
+
+      setHorariosPorEmpleado((prev) => ({
+        ...prev,
+        [formEmpleadoId]: finalDisponibles,
+      }));
+
+      clearError("horarios");
     } catch {
-      setTipoMensaje("error");
-      setMensaje("Error al crear cita");
+      setHorariosPorEmpleado((prev) => ({
+        ...prev,
+        [formEmpleadoId]: [],
+      }));
+      setError("horarios", "Error al cargar horarios");
     }
-  };
+  }, [formEmpleadoId, formFecha, formServicioId, citas, setError, clearError]);
 
   useEffect(() => {
-    if (mensaje) {
-      const timer = setTimeout(() => {
-        setMensaje(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    cargarHorariosDisponibles();
+  }, [cargarHorariosDisponibles]);
+
+  // Cancelar cita con memoizado callback
+  const cancelarCitaCliente = useCallback(
+    async (id) => {
+      try {
+        await cancelarCita(id);
+        setCitas((prev) => prev.filter((c) => c.id !== id));
+        setTipoMensaje("success");
+        setMensaje("Cita cancelada correctamente");
+      } catch {
+        setTipoMensaje("error");
+        setMensaje("No se pudo cancelar la cita");
+      }
+    },
+    []
+  );
+
+  // Manejo de submit con useCallback
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      const [inicio, fin] = formHorario.split("-");
+      try {
+        await procesarReservacion({
+          empleadoId: parseInt(formEmpleadoId),
+          servicios: [{ id: parseInt(formServicioId), cantidad: 1 }],
+          fecha: formFecha,
+          horario: { inicio, fin },
+          total: formTotal,
+        });
+
+        setTipoMensaje("success");
+        setMensaje("Cita creada correctamente");
+
+        const nuevas = await getMisCitas();
+        setCitas(nuevas);
+      } catch {
+        setTipoMensaje("error");
+        setMensaje("Error al crear cita");
+      }
+    },
+    [formEmpleadoId, formServicioId, formFecha, formHorario, formTotal]
+  );
+
+  // Limpiar mensaje automáticamente
+  useEffect(() => {
+    if (!mensaje) return;
+    const timer = setTimeout(() => setMensaje(null), 3000);
+    return () => clearTimeout(timer);
   }, [mensaje]);
 
   return (
@@ -194,7 +218,7 @@ function Reservar() {
       {mensaje && <Alerta tipo={tipoMensaje} mensaje={mensaje} />}
 
       <FormularioReservacion
-        key={formEmpleadoId} // clave para forzar re-render al cambiar empleado
+        key={formEmpleadoId}
         servicios={servicios}
         empleados={empleados}
         horarios={horariosPorEmpleado[formEmpleadoId] || []}
@@ -217,6 +241,7 @@ function Reservar() {
         setError={setError}
         clearError={clearError}
         getHorariosDisponibles={getHorariosDisponibles}
+        cancelarCitaCliente={cancelarCitaCliente}
       />
     </div>
   );

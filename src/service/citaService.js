@@ -23,9 +23,21 @@ const citaService = {
   obtenerCitasPorEstado: (estado, filtros = {}) =>
     axiosInstance.get(`/citas/estado/${estado}`, { params: filtros }),
 
-  cambiarEstadoCita: (id, estado) =>
-    axiosInstance.patch(`/citas/${id}/estado`, { estado }),
-
+  cambiarEstadoCita: (id, estadoId) => {
+    console.log('🚀 Enviando PATCH para cambiar estado');
+    console.log('ID cita:', id);
+    console.log('Estado ID:', estadoId);
+    return axiosInstance.patch(`/citas/${id}/estado`, { estado_id: estadoId })
+      .then(response => {
+        console.log('✅ Respuesta recibida:', response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error('❌ Error en cambiarEstadoCita:', error);
+        throw error;
+      });
+  },
+  
   obtenerHorariosDisponibles: (fecha, empleado_id, servicio_id) =>
     axiosInstance.get('/citas/horarios-disponibles', {
       params: { fecha, empleado_id, servicio_id },
@@ -35,10 +47,17 @@ const citaService = {
     axiosInstance.get(`/citas/disponibilidad/${empleado_id}`, { params: { fecha } }),
 
   obtenerStatsCitas: (filtros = {}) =>
-    axiosInstance.get('/citas/stats', { params: filtros }),
+    axiosInstance.get('/citas/estadisticas', { params: filtros }),
 
-  // ✅ NUEVA FUNCIÓN PARA USAR EN SelectorEstado
-  obtenerEstadosCitas: () => axiosInstance.get('/citas/estados'),
+  obtenerEstadosCitas: async () => {
+    try {
+      const response = await axiosInstance.get('/citas/estados');
+      return response.data;  // devuelve directamente los datos
+    } catch (error) {
+      console.error('Error en obtenerEstadosCitas:', error);
+      throw error;
+    }
+  },
 };
 
 export default citaService;
