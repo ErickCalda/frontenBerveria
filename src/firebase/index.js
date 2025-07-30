@@ -3,13 +3,13 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAby_NJ7qzsZAlAgM0ZSYAlCaAD63zKQoQ",
-  authDomain: "apis-practicas.firebaseapp.com",
-  projectId: "apis-practicas",
-  storageBucket: "apis-practicas.firebasestorage.app",
-  messagingSenderId: "238597549460",
-  appId: "1:238597549460:web:59d0b72e4b081c23a83381",
-  measurementId: "G-5WHRV98FZN"
+  apiKey: "AIzaSyDiromxFjwKCIa34Jnu1YK_GFYB2I2Jy3A",
+  authDomain: "barberia-3957b.firebaseapp.com",
+  projectId: "barberia-3957b",
+  storageBucket: "barberia-3957b.firebasestorage.app",
+  messagingSenderId: "474302543051",
+  appId: "1:474302543051:web:433a8e63f68870786a174e",
+  measurementId: "G-NKXVP4EBYJ"
     
 };
 
