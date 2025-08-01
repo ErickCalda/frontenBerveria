@@ -1,15 +1,17 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { obtenerServicios } from "../service/servicioAPI";
 import ServicioCard from "../components/ServicioCard";
+import { AuthContext } from "../contexts/AuthContext";
 
 export default function Servicios() {
   const [servicios, setServicios] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const tituloRef = useRef(null);
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -46,82 +48,97 @@ export default function Servicios() {
     cargarServicios();
   }, []);
 
-  // Categorías únicas para filtro
-  const categoriasUnicas = [...new Set(servicios.map((s) => s.categoria_nombre))];
+  // Orden personalizado
+  const ordenCategorias = ["Adultos", "Niños", "Barba", "Cejas"];
 
-  // Servicios filtrados según categoría seleccionada
+  // Extraemos categorías únicas, limpiamos espacios y ordenamos según el array personalizado
+  const categoriasUnicas = [...new Set(servicios.map(s => s.categoria_nombre.trim()))].sort(
+    (a, b) => {
+      const indexA = ordenCategorias.indexOf(a);
+      const indexB = ordenCategorias.indexOf(b);
+      // Si no están en la lista, ponerlos al final
+      if (indexA === -1 && indexB === -1) return 0;
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    }
+  );
+
   const serviciosFiltrados = categoriaSeleccionada
-    ? servicios.filter((s) => s.categoria_nombre === categoriaSeleccionada)
+    ? servicios.filter((s) => s.categoria_nombre.trim() === categoriaSeleccionada)
     : servicios;
 
-  // Función para manejar la reserva - redirige a la ruta /Reservar
   const handleReservar = () => {
-    navigate("/Reservar");
+    if (!user) {
+      navigate("/login");
+    } else {
+      navigate("/Reservar");
+    }
   };
 
-  return (
-    <section
-      className="bg-[#1c1c1c] text-white h-auto p-6 flex flex-col"
-      style={{ fontFamily: "var(--font-display)" }}
+return (
+  <section className="bg-[#1c1c1c] text-white min-h-screen p-4 sm:p-6 flex flex-col" style={{ fontFamily: "var(--font-display)" }}>
+    <h2
+      ref={tituloRef}
+      className="text-center font-extrabold mb-8 sm:mb-10"
+      style={{
+        fontSize: "clamp(2rem, 6vw, 4rem)",
+        color: "var(--color-barber-gold)",
+        textShadow: "0 0 12px var(--color-barber-gold)",
+      }}
     >
-      <h2
-        ref={tituloRef}
-        className="text-center font-extrabold mb-10"
-        style={{
-          fontSize: "clamp(2.5rem, 5vw, 4rem)",
-          color: "var(--color-barber-gold)",
-          textShadow: "0 0 12px var(--color-barber-gold)",
-        }}
-      >
-        Servicios
-      </h2>
+      Servicios
+    </h2>
 
-      {/* Menú dinámico de categorías */}
-      <nav className="flex justify-center mb-8">
-        <ul className="flex gap-6 bg-[#2a2a2a] px-4 py-2 rounded-lg shadow-lg overflow-x-auto scroll-custom">
-          {categoriasUnicas.map((cat) => (
-            <li
-              key={cat}
-              onClick={() =>
-                setCategoriaSeleccionada(
-                  categoriaSeleccionada === cat ? null : cat
-                )
-              }
-              className={`relative group cursor-pointer text-lg font-semibold transition ${
+    <nav className="flex justify-center mb-6 sm:mb-8">
+      <ul className="flex gap-4 sm:gap-6 bg-[#2a2a2a] px-3 py-2 rounded-lg shadow-lg overflow-x-auto scroll-custom no-scrollbar">
+        {categoriasUnicas.map((cat) => (
+          <li
+            key={cat}
+            onClick={() =>
+              setCategoriaSeleccionada(
+                categoriaSeleccionada === cat ? null : cat
+              )
+            }
+            className={`relative whitespace-nowrap cursor-pointer text-base sm:text-lg font-semibold transition ${
+              categoriaSeleccionada === cat
+                ? "text-yellow-400"
+                : "text-white hover:text-yellow-400"
+            }`}
+          >
+            {cat}
+            <span
+              className={`absolute left-0 -bottom-1 w-full h-0.5 bg-yellow-400 transform transition-transform origin-left duration-300 ${
                 categoriaSeleccionada === cat
-                  ? "text-yellow-400"
-                  : "text-white hover:text-yellow-400"
+                  ? "scale-x-100"
+                  : "scale-x-0 group-hover:scale-x-100"
               }`}
-            >
-              {cat}
-              <span
-                className={`absolute left-0 -bottom-1 w-full h-0.5 bg-yellow-400 transform transition-transform origin-left duration-300 ${
-                  categoriaSeleccionada === cat
-                    ? "scale-x-100"
-                    : "scale-x-0 group-hover:scale-x-100"
-                }`}
-              ></span>
-            </li>
-          ))}
-        </ul>
-      </nav>
+            ></span>
+          </li>
+        ))}
+      </ul>
+    </nav>
 
-      {/* Cards de servicios */}
-      <div className="w-full flex justify-center">
-        <div
-          className="max-w-screen-xl w-full overflow-x-auto px-4 scroll-custom"
-          style={{ maxHeight: "60vh" }}
-        >
-          <div className="flex gap-6">
-            {serviciosFiltrados.map((serv) => (
-              <div key={serv.id} className="flex-shrink-0">
-                {/* Pasamos la función handleReservar para que el botón reserve */}
-                <ServicioCard servicio={serv} onReservar={handleReservar} />
-              </div>
-            ))}
-          </div>
+    <div className="w-full flex justify-center">
+      <div
+        className="max-w-screen-xl w-full overflow-x-auto px-2 sm:px-4 scroll-custom no-scrollbar"
+        style={{ maxHeight: "60vh" }}
+      >
+        <div className="flex gap-4 sm:gap-6 min-w-max">
+          {serviciosFiltrados.map((serv) => (
+            <div
+              key={serv.id}
+              className="flex-shrink-0 w-64 sm:w-72 md:w-80"
+            >
+              <ServicioCard servicio={serv} onReservar={handleReservar} />
+            </div>
+          ))}
         </div>
       </div>
-    </section>
-  );
+    </div>
+  </section>
+);
+
+
+
 }

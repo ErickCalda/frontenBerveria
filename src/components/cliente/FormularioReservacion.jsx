@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Info } from "lucide-react";
 
 export default function FormularioReservacion({
@@ -18,8 +18,24 @@ export default function FormularioReservacion({
   handleSubmit,
   setError,
   clearError,
-  // Ya no se usa getHorariosDisponibles aquí, la petición es en el padre
 }) {
+  const ordenCategorias = ["Adultos", "Niños", "Barba", "Cejas"];
+  const categoriasUnicas = [...new Set(servicios.map(s => s.categoria_nombre.trim()))].sort(
+    (a, b) => ordenCategorias.indexOf(a) - ordenCategorias.indexOf(b)
+  );
+  const categorias = ["Todos", ...categoriasUnicas];
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
+
+  const normalizar = (str) =>
+    str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  const serviciosFiltrados =
+    categoriaSeleccionada === "Todos"
+      ? servicios
+      : servicios.filter(
+          (s) => normalizar(s.categoria_nombre.trim()) === normalizar(categoriaSeleccionada)
+        );
+
   const getDaysInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const days = [];
@@ -33,16 +49,19 @@ export default function FormularioReservacion({
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
-  const daysInCurrentMonth = getDaysInMonth(currentYear, currentMonth);
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const isLastDayOfMonth = today.getDate() === getDaysInMonth(currentYear, currentMonth).length;
+  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+  const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+  const showMonth = isLastDayOfMonth ? nextMonth : currentMonth;
+  const showYear = isLastDayOfMonth ? nextYear : currentYear;
+  const daysToShow = getDaysInMonth(showYear, showMonth);
   const weekdays = ["L", "M", "X", "J", "V", "S", "D"];
-  const offset = (firstDayOfMonth + 6) % 7;
+  const offset = (new Date(showYear, showMonth, 1).getDay() + 6) % 7;
 
   const handleDateSelection = (day) => {
-    const isoDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const isoDate = `${showYear}-${String(showMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setFormFecha(isoDate);
     setFormHorario("");
-    // Importante: limpiar horarios aquí también porque cambia la fecha
     setHorarios([]);
   };
 
@@ -58,26 +77,40 @@ export default function FormularioReservacion({
     setHorarios([]);
   };
 
-  const isPastDay = (day) => {
-    const dateToCheck = new Date(currentYear, currentMonth, day);
+  function isPastDay(day) {
+    const dateToCheck = new Date(showYear, showMonth, day);
     dateToCheck.setHours(0, 0, 0, 0);
     const todayMidnight = new Date();
     todayMidnight.setHours(0, 0, 0, 0);
     return dateToCheck < todayMidnight;
-  };
-
-  // *** QUITAMOS ESTE useEffect que hacía la consulta al backend ***
-  // Ahora el padre controla cuándo consultar horarios y filtrar
+  }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-r from-zinc-900 via-black to-zinc-900 text-white py-8 px-4">
-      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-screen-2xl mx-auto">
+    <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 ">
+      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-screen-2xl mx-auto ">
         {/* SERVICIOS */}
-        <div className="space-y-6 w-full">
-          <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
+        <div className=" w-full bg-[#1C1C1C] ">
+          <div className="bg-[#1C1C1C] rounded-xl shadow-xl p-0 w-full">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Servicios</h3>
+            <div className="flex gap-3 mb-4 flex-wrap">
+              {categorias.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaSeleccionada(cat)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition
+                    ${
+                      categoriaSeleccionada === cat
+                        ? "bg-yellow-400 text-black"
+                        : "bg-zinc-700 text-white hover:bg-yellow-500 hover:text-black"
+                    }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 max-h-80 overflow-y-auto scrollbar-thin">
-              {servicios.map((s) => (
+              {serviciosFiltrados.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => selectServicio(s.id)}
@@ -88,7 +121,7 @@ export default function FormularioReservacion({
                   }`}
                 >
                   <div className="font-bold text-white mb-1">{s.nombre}</div>
-                  <div className="text-zinc-400 text-sm">Corte con estilo</div>
+                  <div className="text-zinc-400 text-sm">{s.categoria_nombre}</div>
                   <div className="text-zinc-400 text-sm">
                     Tiempo: <span className="text-amber-400" style={{ fontSize: "13px" }}>30min</span>
                   </div>
@@ -108,12 +141,11 @@ export default function FormularioReservacion({
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
               {Array(offset).fill(null).map((_, i) => <div key={"empty-" + i}></div>)}
-              {daysInCurrentMonth.map((day) => {
-                const date = new Date(currentYear, currentMonth, day);
-                const localISO = date.toLocaleDateString("sv-SE");
+              {daysToShow.map((day) => {
+                const date = new Date(showYear, showMonth, day);
+                const localISO = date.toISOString().split("T")[0];
                 const selected = formFecha === localISO;
                 const past = isPastDay(day);
-
                 return (
                   <button
                     key={day}
@@ -123,8 +155,7 @@ export default function FormularioReservacion({
                       ${selected ? "bg-yellow-400 text-black shadow" : ""}
                       ${!selected && !past ? "hover:bg-zinc-700 text-white" : ""}
                       ${past ? "text-zinc-500 cursor-not-allowed" : ""}
-                      ${day === today.getDate() && !past ? "border border-yellow-400" : ""}
-                    `}
+                      ${day === today.getDate() && !past ? "border border-yellow-400" : ""}`}
                   >
                     {day}
                   </button>
@@ -202,7 +233,6 @@ export default function FormularioReservacion({
         </div>
       </div>
 
-      {/* Información pago y botón confirmar */}
       <div className="mt-6 text-center border-t border-zinc-600 pt-4">
         <div className="w-full text-center">
           <p className="inline-flex items-start justify-center gap-2 text-base text-amber-400 max-w-3xl mx-auto">
@@ -212,7 +242,7 @@ export default function FormularioReservacion({
         </div>
 
         <a
-          href="https://wa.me/1234567890"
+          href="https://wa.me/593982945646?text=Hola,%20quiero%20realizar%20la%20verificaci%C3%B3n%20de%20mi%20pago%20y%20activar%20mi%20cita.%20Muchas%20gracias."
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 px-6 py-3 text-black font-semibold shadow-lg text-base"
@@ -235,7 +265,6 @@ export default function FormularioReservacion({
         </button>
       </div>
 
-      {/* Mostrar errores */}
       {Object.entries(errores).map(
         ([key, errorMsg]) =>
           errorMsg && key !== "fecha" && (

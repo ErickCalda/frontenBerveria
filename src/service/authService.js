@@ -7,7 +7,7 @@ export async function loginGoogle(idToken) {
   if(res.data.accessToken) saveAccessToken(res.data.accessToken);
   if(res.data.refreshToken) saveRefreshToken(res.data.refreshToken);
 
-  console.log("📦 RES.DATA DEL BACKEND:", res.data); // me devulve el usuario logueado  y el rol junto con lo demas datos menos el la clave 
+  // me devulve el usuario logueado  y el rol junto con lo demas datos menos el la clave 
 
   return res.data;
 }
@@ -27,10 +27,10 @@ export async function logout() {
 export async function verify() {
   try {
     const res = await axios.get("/auth/verify");
-    console.log("Respuesta verify backend:", res.data);
+   
     return res.data;
   } catch (error) {
-    console.error("❌ Error en verify:", error);
+   
     throw error;
   }
 }

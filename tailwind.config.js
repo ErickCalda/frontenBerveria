@@ -15,6 +15,11 @@ export default {
           barberGold: "#D4AF37", // color dorado barbería, ya lo tienes
           barberDark: "#1C1C1C",
           barberBrown: "#5C452B",
+            gold: {
+          400: "#D4AF37",
+          500: "#B78E1D",
+          600: "#A07C1A",
+        },
         },
       },
     },

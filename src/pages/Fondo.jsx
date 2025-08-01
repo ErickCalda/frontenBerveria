@@ -2,19 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import Login from "./Login";
 
-
 const MEDIA = [
-  { src: "/assets/foto1.jpg", type: "image" },
+  { src: "/assets/foto1.webp", type: "image" },
   { src: "/assets/6.mp4", type: "video" },
-  { src: "/assets/foto2.jpg", type: "image" },
+  { src: "/assets/foto2.webp", type: "image" },
   { src: "/assets/5.mp4", type: "video" },
-  { src: "/assets/foto3.jpg", type: "image" },
+  { src: "/assets/foto3.webp", type: "image" },
   { src: "/assets/1.mp4", type: "video" },
-  { src: "/assets/foto4.jpg", type: "image" },
+  { src: "/assets/foto4.webp", type: "image" },
   { src: "/assets/2.mp4", type: "video" },
-  { src: "/assets/foto5.jpg", type: "image" },
+  { src: "/assets/foto5.webp", type: "image" },
   { src: "/assets/3.mp4", type: "video" },
-  { src: "/assets/foto6.jpg", type: "image" },
+  { src: "/assets/foto6.webp", type: "image" },
   { src: "/assets/4.mp4", type: "video" },
 ];
 
@@ -52,8 +51,8 @@ export default function Fondo() {
           gsap.fromTo(
             el,
             {
-              xPercent: col * 100,
-              yPercent: row * 100,
+              x: `${col * 100}%`,
+              y: `${row * 100}%`,
               opacity: 0,
               scale: 0.95,
             },
@@ -89,7 +88,10 @@ export default function Fondo() {
   }, [items]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative" ref={containerRef}>
+    <div
+      className="w-screen h-screen relative overflow-hidden"
+      ref={containerRef}
+    >
       {/* Fondo invisible con grid */}
       <div
         className="absolute top-0 left-0 w-full h-full"
@@ -97,6 +99,7 @@ export default function Fondo() {
           display: "grid",
           gridTemplateColumns: `repeat(${COLS}, 1fr)`,
           gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+          pointerEvents: "none",
         }}
       />
 
@@ -109,6 +112,8 @@ export default function Fondo() {
             width: `${100 / COLS}%`,
             height: `${100 / ROWS}%`,
             transformOrigin: "center center",
+            willChange: "transform, opacity",
+            contain: "layout style",
             opacity: 0,
           }}
         >

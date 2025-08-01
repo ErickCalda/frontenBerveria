@@ -15,7 +15,7 @@ export const getEmpleadosDisponibles = async (serviciosIds) => {
   }
   const response = await axiosInstance.get("/reservacion/empleados", { params });
   // Retorna solo el array de empleados
-  console.log('desde reservacionServide',response.data.empleados)
+
   return response.data.empleados;
 };
 

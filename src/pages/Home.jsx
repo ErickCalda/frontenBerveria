@@ -5,7 +5,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Servicios from "./Servicio";
 import Galeria from "../components/Geleria";
 import QuienesSomos from "./QuienesSomos";
-
+import MediaCarousel from "./Clientes/MediaCarousel";
+import Footer from "./Footer";
 gsap.registerPlugin(ScrollTrigger);
 
 const videos = ["/assets/1.mp4", "/assets/2.mp4", "/assets/3.mp4"];
@@ -307,10 +308,20 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <section>
+          <Servicios />
+      </section>
 
-      <Servicios />
-      <Galeria />
-      <QuienesSomos />
+      <section>
+        <MediaCarousel />
+      </section>
+
+      <section>
+       
+        <QuienesSomos />
+      </section>
+     
+      <Footer />
     </main>
   );
 }

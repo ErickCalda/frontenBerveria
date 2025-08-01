@@ -210,7 +210,7 @@ function Reservar() {
   }, [mensaje]);
 
   return (
-    <div className="p-6 bg-black shadow-lg">
+    <div className="p-6 bg-[#1C1C1C] shadow-lg">
       <h2 className="text-4xl font-bold text-white mb-4 text-center">
         GOD MEETS 2.0 BARBERSHOP
       </h2>

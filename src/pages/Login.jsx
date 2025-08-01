@@ -58,7 +58,7 @@ export default function Login() {
       const idToken = await userFirebase.getIdToken();
 
       const response = await loginGoogle(idToken);
-      console.log("Respuesta loginGoogle:", response);
+     
 
       if (response?.accessToken && response?.refreshToken && response?.usuario) {
         saveAccessToken(response.accessToken);

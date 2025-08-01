@@ -7,12 +7,12 @@ const HeroBackground = forwardRef(({ overlayStyle }, ref) => {
       <img
         src="/assets/FOTOPRINCIPAL.webp"
         alt="Fondo barbería"
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="absolute inset-0 w-full h-full object-cover z-40"
       />
 
       {/* Overlay negro */}
       <div
-        className="absolute inset-0 bg-black z-20"
+        className="absolute inset-0 bg-black z-70"
         style={{ pointerEvents: "none", ...overlayStyle }}
       ></div>
     </div>
