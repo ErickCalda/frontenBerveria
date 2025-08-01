@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
-import ModalConfirmacionPago from "./ModalConfirmacionPago";
+
 
 export default function FormularioReservacion({
   servicios,
