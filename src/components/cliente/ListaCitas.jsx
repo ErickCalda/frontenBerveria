@@ -70,17 +70,7 @@ export default function ListaCitas({ citas, errores, cancelarCitaCliente, format
                       <span className="w-2 h-2 mr-2 rounded-full bg-white opacity-80"></span>
                       {c.estado_nombre}
                     </div>
-                    {!mostrarPasadas && (
-                    <button
-                      onClick={() => cancelarCitaCliente(c.id)}
-                      className="w-full lg:w-auto flex items-center justify-center gap-2 border border-white text-white text-sm font-semibold px-4 py-2 rounded-md transition duration-200 hover:bg-red-600 active:scale-95 cursor-pointer "
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Cancelar
-                    </button>
-                  )}
+             
 
                   </div>
                 </li>
