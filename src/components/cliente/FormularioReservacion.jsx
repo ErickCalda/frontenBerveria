@@ -5,6 +5,7 @@ export default function FormularioReservacion({
   servicios,
   empleados,
   horarios,
+  horariosOcupados = [], // <-- Recibe horarios ocupados como array de strings "HH:mm-HH:mm"
   setHorarios,
   errores,
   formServicioId,
@@ -19,16 +20,32 @@ export default function FormularioReservacion({
   setError,
   clearError,
 }) {
+  // Orden personalizado de categorías
   const ordenCategorias = ["Adultos", "Niños", "Barba", "Cejas"];
+
+  // Extraer categorías únicas y ordenar según ordenCategorias
   const categoriasUnicas = [...new Set(servicios.map(s => s.categoria_nombre.trim()))].sort(
-    (a, b) => ordenCategorias.indexOf(a) - ordenCategorias.indexOf(b)
+    (a, b) => {
+      const indexA = ordenCategorias.indexOf(a);
+      const indexB = ordenCategorias.indexOf(b);
+      if (indexA === -1 && indexB === -1) return 0;
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    }
   );
+
+  // Añadimos "Todos" al inicio para mostrar todos sin filtro
   const categorias = ["Todos", ...categoriasUnicas];
+
+  // Estado para la categoría seleccionada
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
 
+  // Normaliza para evitar problemas con mayúsculas, tildes y espacios
   const normalizar = (str) =>
-    str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+  // Filtra servicios según categoría seleccionada
   const serviciosFiltrados =
     categoriaSeleccionada === "Todos"
       ? servicios
@@ -36,6 +53,7 @@ export default function FormularioReservacion({
           (s) => normalizar(s.categoria_nombre.trim()) === normalizar(categoriaSeleccionada)
         );
 
+  // Función para obtener días del mes
   const getDaysInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const days = [];
@@ -49,17 +67,14 @@ export default function FormularioReservacion({
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
-  const isLastDayOfMonth = today.getDate() === getDaysInMonth(currentYear, currentMonth).length;
-  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-  const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-  const showMonth = isLastDayOfMonth ? nextMonth : currentMonth;
-  const showYear = isLastDayOfMonth ? nextYear : currentYear;
-  const daysToShow = getDaysInMonth(showYear, showMonth);
+  const daysInCurrentMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
   const weekdays = ["L", "M", "X", "J", "V", "S", "D"];
-  const offset = (new Date(showYear, showMonth, 1).getDay() + 6) % 7;
+  const offset = (firstDayOfMonth + 6) % 7;
 
+  // Manejadores para seleccionar fecha, empleado y servicio
   const handleDateSelection = (day) => {
-    const isoDate = `${showYear}-${String(showMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const isoDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setFormFecha(isoDate);
     setFormHorario("");
     setHorarios([]);
@@ -77,13 +92,23 @@ export default function FormularioReservacion({
     setHorarios([]);
   };
 
+  // Para deshabilitar días pasados
   function isPastDay(day) {
-    const dateToCheck = new Date(showYear, showMonth, day);
+    const today = new Date();
+    const dateToCheck = new Date(currentYear, currentMonth, day);
+
+    // Comparar sin horas
     dateToCheck.setHours(0, 0, 0, 0);
-    const todayMidnight = new Date();
-    todayMidnight.setHours(0, 0, 0, 0);
-    return dateToCheck < todayMidnight;
+    today.setHours(0, 0, 0, 0);
+
+    return dateToCheck < today;
   }
+
+  // Filtrar horarios para excluir los ocupados
+  const horariosDisponibles = horarios.filter(h => {
+    const rango = `${h.inicio}-${h.fin}`;
+    return !horariosOcupados.includes(rango);
+  });
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 ">
@@ -92,6 +117,8 @@ export default function FormularioReservacion({
         <div className=" w-full bg-[#1C1C1C] ">
           <div className="bg-[#1C1C1C] rounded-xl shadow-xl p-0 w-full">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Servicios</h3>
+
+            {/* Botones filtro categorías */}
             <div className="flex gap-3 mb-4 flex-wrap">
               {categorias.map((cat) => (
                 <button
@@ -109,6 +136,7 @@ export default function FormularioReservacion({
               ))}
             </div>
 
+            {/* Servicios filtrados */}
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 max-h-80 overflow-y-auto scrollbar-thin">
               {serviciosFiltrados.map((s) => (
                 <button
@@ -141,11 +169,12 @@ export default function FormularioReservacion({
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
               {Array(offset).fill(null).map((_, i) => <div key={"empty-" + i}></div>)}
-              {daysToShow.map((day) => {
-                const date = new Date(showYear, showMonth, day);
-                const localISO = date.toISOString().split("T")[0];
+              {daysInCurrentMonth.map((day) => {
+                const date = new Date(currentYear, currentMonth, day);
+                const localISO = date.toLocaleDateString("sv-SE");
                 const selected = formFecha === localISO;
                 const past = isPastDay(day);
+
                 return (
                   <button
                     key={day}
@@ -155,7 +184,8 @@ export default function FormularioReservacion({
                       ${selected ? "bg-yellow-400 text-black shadow" : ""}
                       ${!selected && !past ? "hover:bg-zinc-700 text-white" : ""}
                       ${past ? "text-zinc-500 cursor-not-allowed" : ""}
-                      ${day === today.getDate() && !past ? "border border-yellow-400" : ""}`}
+                      ${day === today.getDate() && !past ? "border border-yellow-400" : ""}
+                    `}
                   >
                     {day}
                   </button>
@@ -200,29 +230,33 @@ export default function FormularioReservacion({
           <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Horarios Disponibles</h3>
             <div className="grid grid-cols-2 gap-4 max-h-72 overflow-y-auto pr-2" style={{ scrollbarWidth: "thin" }}>
-              {horarios.map((h, idx) => {
-                const selected = formHorario === `${h.inicio}-${h.fin}`;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setFormHorario(`${h.inicio}-${h.fin}`)}
-                    className={`
-                      px-6 py-3 rounded-lg font-semibold text-base
-                      transition duration-300 ease-in-out
-                      border border-transparent shadow-sm
-                      ${
-                        selected
-                          ? "bg-yellow-400 text-black shadow-lg border-yellow-300"
-                          : "bg-white text-zinc-800 hover:bg-yellow-100 hover:shadow-md"
-                      }
-                      hover:-translate-y-0.5 active:translate-y-0
-                      focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50
-                    `}
-                  >
-                    {h.inicio} - {h.fin}
-                  </button>
-                );
-              })}
+              {horariosDisponibles.length > 0 ? (
+                horariosDisponibles.map((h, idx) => {
+                  const selected = formHorario === `${h.inicio}-${h.fin}`;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setFormHorario(`${h.inicio}-${h.fin}`)}
+                      className={`
+                        px-6 py-3 rounded-lg font-semibold text-base
+                        transition duration-300 ease-in-out
+                        border border-transparent shadow-sm
+                        ${
+                          selected
+                            ? "bg-yellow-400 text-black shadow-lg border-yellow-300"
+                            : "bg-white text-zinc-800 hover:bg-yellow-100 hover:shadow-md"
+                        }
+                        hover:-translate-y-0.5 active:translate-y-0
+                        focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50
+                      `}
+                    >
+                      {h.inicio} - {h.fin}
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="text-zinc-400 text-center col-span-2">No hay horarios disponibles.</p>
+              )}
             </div>
             {errores.horarios && (
               <div className="mt-3 bg-red-100 border border-red-400 text-red-700 rounded-md px-3 py-2 text-base font-medium">
@@ -233,6 +267,7 @@ export default function FormularioReservacion({
         </div>
       </div>
 
+      {/* Información pago y botón confirmar */}
       <div className="mt-6 text-center border-t border-zinc-600 pt-4">
         <div className="w-full text-center">
           <p className="inline-flex items-start justify-center gap-2 text-base text-amber-400 max-w-3xl mx-auto">
@@ -265,6 +300,7 @@ export default function FormularioReservacion({
         </button>
       </div>
 
+      {/* Mostrar errores generales */}
       {Object.entries(errores).map(
         ([key, errorMsg]) =>
           errorMsg && key !== "fecha" && (

@@ -8,19 +8,17 @@ export default function ServicioCard({ servicio, onReservar }) {
       "
     >
       {servicio.imagen ? (
-        <video
+        <img
           src={servicio.imagen}
-          autoPlay
-          loop
-          muted
-          playsInline
+          alt={servicio.nombre}
           className="w-full h-48 object-cover rounded-md shadow-md"
         />
       ) : (
         <div className="w-full h-48 bg-gray-700 flex items-center justify-center rounded-md text-gray-300">
-          Video no disponible
+          Imagen no disponible
         </div>
       )}
+
       <div className="flex flex-col gap-2 text-[#f1f1f1] px-2">
         {servicio.categoria_nombre && (
           <p className="text-sm text-yellow-400 text-center uppercase tracking-wide">

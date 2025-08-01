@@ -12,6 +12,7 @@ export default function Servicios() {
   const tituloRef = useRef(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -75,6 +76,8 @@ export default function Servicios() {
       navigate("/Reservar");
     }
   };
+  console.log(servicios);
+
 
 return (
   <section className="bg-[#1c1c1c] text-white min-h-screen p-4 sm:p-6 flex flex-col" style={{ fontFamily: "var(--font-display)" }}>

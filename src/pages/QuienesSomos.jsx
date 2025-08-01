@@ -82,7 +82,7 @@ export default function QuienesSomos() {
         </div>
         <div ref={imageRef} className="md:w-1/2">
           <img
-            src="/assets/FOTOPRINCIPAL.webp"
+            src="/assets/propietario.jpeg"
             alt="Barbería God Meets 2.0"
             className="rounded-xl shadow-xl w-full object-cover"
           />

@@ -39,11 +39,12 @@ export default function Footer() {
         <div>
           <h4 className="font-semibold mb-2">Contacto</h4>
           <p className="text-sm">📍 Esmeraldas</p>
-          <p className="text-sm">📞 +593 999 123 456</p>
+          <p className="text-sm">📞 593 98 294 5646</p>
         </div>
         <div>
           <h4 className="font-semibold mb-2">Horario</h4>
-          <p className="text-sm">Lun - Dom: </p>
+          <p className="text-sm">Lun - Sab 9:15am - 7:45pm  </p>
+           <p className="text-sm">Dom 9:30am - 2:00pm </p>
           
         </div>
       </div>
