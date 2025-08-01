@@ -76,11 +76,11 @@ export default function Servicios() {
       navigate("/Reservar");
     }
   };
-  console.log(servicios);
+
 
 
 return (
-  <section className="bg-[#1c1c1c] text-white min-h-screen p-4 sm:p-6 flex flex-col" style={{ fontFamily: "var(--font-display)" }}>
+  <section className="bg-[#1c1c1c] text-white p-4 sm:p-6 flex flex-col" style={{ fontFamily: "var(--font-display)" }}>
     <h2
       ref={tituloRef}
       className="text-center font-extrabold mb-8 sm:mb-10"
@@ -121,24 +121,20 @@ return (
         ))}
       </ul>
     </nav>
-
-    <div className="w-full flex justify-center">
+<div className="w-full max-w-screen-xl mx-auto px-4 py-4">
+  <div className="flex flex-wrap justify-center gap-6">
+    {serviciosFiltrados.map((serv) => (
       <div
-        className="max-w-screen-xl w-full overflow-x-auto px-2 sm:px-4 scroll-custom no-scrollbar"
-        style={{ maxHeight: "60vh" }}
+        key={serv.id}
+        className="w-72 sm:w-80 md:w-96"
       >
-        <div className="flex gap-4 sm:gap-6 min-w-max">
-          {serviciosFiltrados.map((serv) => (
-            <div
-              key={serv.id}
-              className="flex-shrink-0 w-64 sm:w-72 md:w-80"
-            >
-              <ServicioCard servicio={serv} onReservar={handleReservar} />
-            </div>
-          ))}
-        </div>
+        <ServicioCard servicio={serv} onReservar={handleReservar} />
       </div>
-    </div>
+    ))}
+  </div>
+</div>
+
+
   </section>
 );
 

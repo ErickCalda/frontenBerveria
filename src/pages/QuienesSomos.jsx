@@ -8,61 +8,9 @@ export default function QuienesSomos() {
   const textRef = useRef(null);
   const imageRef = useRef(null);
 
-  useEffect(() => {
-    const textAnim = gsap.fromTo(
-      textRef.current,
-      { opacity: 0, x: -100 },
-      {
-        opacity: 1,
-        x: 0,
-        
-        duration: 1.5,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: textRef.current,
-          start: "bottom bottom",
-          end: "top center",
-          toggleActions: "play reverse play reverse",
-       
-          scrub: true,
-          
-        },
-      }
-    );
-
-    const imageAnim = gsap.fromTo(
-      imageRef.current,
-      { opacity: 0, x: 100 },
-      {
-        opacity: 1,
-        x: 0,
-        duration: 1.5,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: imageRef.current,
-          start: "bottom bottom",
-          end: "top center",
-          toggleActions: "play reverse play reverse",
-        
-          scrub: true,
-        },
-      }
-    );
-
-    requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
-    });
-
-    return () => {
-      textAnim.scrollTrigger.kill();
-      imageAnim.scrollTrigger.kill();
-      textAnim.kill();
-      imageAnim.kill();
-    };
-  }, []);
 
   return (
-    <section className="bg-[ #1C1C1C]py-20" id="quienes-somos">
+    <section className="bg-[ #1C1C1C]py-20 text-center" id="quienes-somos">
       <div className="container mx-auto px-4 md:flex items-center justify-between gap-8">
         <div ref={textRef} className="md:w-1/2 mb-12 md:mb-0">
           <h2 className="text-4xl md:text-5xl font-extrabold text-amber-50 mb-6">
@@ -80,13 +28,17 @@ export default function QuienesSomos() {
             y estilo urbano.
           </p>
         </div>
-        <div ref={imageRef} className="md:w-1/2">
-          <img
-            src="/assets/propietario.jpeg"
-            alt="Barbería God Meets 2.0"
-            className="rounded-xl shadow-xl w-full object-cover"
-          />
-        </div>
+<div ref={imageRef} className="w-full flex justify-center md:w-auto">
+  <img
+    src="/assets/propietario.jpeg"
+    alt="Barbería God Meets 2.0"
+    style={{ height: '400px', width: '300px', objectFit: 'cover' }}
+    className="rounded-xl shadow-xl w-full md:w-auto"
+  />
+</div>
+
+
+
       </div>
     </section>
   );

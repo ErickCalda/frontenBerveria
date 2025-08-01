@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
+import ModalConfirmacionPago from "./ModalConfirmacionPago";
 
 export default function FormularioReservacion({
   servicios,
@@ -20,6 +21,8 @@ export default function FormularioReservacion({
   setError,
   clearError,
 }) {
+
+
   // Orden personalizado de categorías
   const ordenCategorias = ["Adultos", "Niños", "Barba", "Cejas"];
 
@@ -109,6 +112,31 @@ export default function FormularioReservacion({
     const rango = `${h.inicio}-${h.fin}`;
     return !horariosOcupados.includes(rango);
   });
+
+
+
+
+const handleConfirmarReserva = async (e) => {
+  e.preventDefault();
+
+  clearError && clearError(); // Si tienes esta función para limpiar errores
+
+  const cita = await handleSubmit(e); // Tu función handleSubmit debe devolver el objeto cita o null/falsy si falla
+
+  if (cita) {
+    setCitaCreada(cita);
+    setModalVisible(true);
+  } else {
+    setError &&
+      setError((prev) => ({
+        ...prev,
+        general: "No se pudo crear la cita. Intenta nuevamente.",
+      }));
+  }
+};
+
+
+  
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 ">
@@ -267,38 +295,99 @@ export default function FormularioReservacion({
         </div>
       </div>
 
-      {/* Información pago y botón confirmar */}
-      <div className="mt-6 text-center border-t border-zinc-600 pt-4">
-        <div className="w-full text-center">
-          <p className="inline-flex items-start justify-center gap-2 text-base text-amber-400 max-w-3xl mx-auto">
-            <Info className="w-5 h-5 mt-1 text-yellow-400 flex-shrink-0" />
-            Para que tu cita sea aprobada, debes notificar que ya realizaste el pago. Puedes hacerlo a través de WhatsApp.
-          </p>
-        </div>
+ 
 
-        <a
-          href="https://wa.me/593982945646?text=Hola,%20quiero%20realizar%20la%20verificaci%C3%B3n%20de%20mi%20pago%20y%20activar%20mi%20cita.%20Muchas%20gracias."
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 px-6 py-3 text-black font-semibold shadow-lg text-base"
-          style={{ borderRadius: "5px" }}
-        >
-          Notificar pago por WhatsApp
-        </a>
-      </div>
 
-      <div className="mt-12 text-center">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            handleSubmit(e);
-          }}
-          className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-400 hover:to-yellow-300 px-12 py-4 text-black font-bold shadow-2xl text-xl"
-          style={{ borderRadius: "5px" }}
-        >
-          Confirmar Cita
-        </button>
-      </div>
+
+
+
+<div className="mt-6 text-center border-t border-zinc-700 pt-8 max-w-3xl mx-auto">
+  <div className="mb-6">
+    <h3 className="text-xl font-semibold text-white mb-4">💈 Método de Pago</h3>
+    <p className="text-amber-400 mb-2">
+      Realiza el pago a la siguiente cuenta antes de confirmar tu cita:
+    </p>
+    <div className="bg-zinc-800 p-4 rounded-lg shadow-inner text-left text-white">
+      <p><strong>Banco:</strong> Pichincha</p>
+      <p><strong>N° de cuenta:</strong> 2203780921</p>
+      <p><strong>Titular:</strong> David García</p>
+    </div>
+  </div>
+
+  <div className="mb-6 text-left bg-zinc-800 p-4 rounded-lg shadow-inner text-white">
+    <h4 className="text-lg font-semibold mb-2">Pasos para confirmar tu cita:</h4>
+    <ol className="list-decimal list-inside space-y-1 text-sm text-amber-300">
+      <li>Realiza el pago al número de cuenta indicado.</li>
+      <li>Haz clic en el botón de WhatsApp a continuación.</li>
+      <li>Envíanos el comprobante de pago para activar tu cita.</li>
+    </ol>
+  </div>
+<button
+  onClick={(e) => {
+    e.preventDefault();
+    handleSubmit(e);
+
+    setTimeout(() => {
+      // Abrir ventana nueva después de 3 segundos
+      const newWindow = window.open("", "_blank");
+
+      // Después de 3 segundos, cambiar URL
+    
+          newWindow.location.href =
+            "https://wa.me/593982945646?text=Hola,%20quiero%20realizar%20la%20verificaci%C3%B3n%20de%20mi%20pago%20y%20activar%20mi%20cita.%20Muchas%20gracias.";
+       
+
+      
+    },3000)
+
+
+  }}
+  className="inline-block bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-8 py-3 mb-10 text-white font-semibold rounded-lg shadow-lg text-base"
+>
+  Notificar pago por WhatsApp
+</button>
+
+
+
+  <div className="mb-2 flex items-center justify-center gap-1 text-yellow-400 text-xs select-none cursor-pointer relative group max-w-md mx-auto">
+    <span>¿Problemas con tu reserva?</span>
+    <button
+      onClick={() =>
+        window.open(
+          "https://wa.me/593982945646?text=Hola,%20ya%20realicé%20el%20pago%20pero%20no%20puedo%20reservar%20mi%20cita.%20Necesito%20ayuda,%20por%20favor.",
+          "_blank"
+        )
+      }
+      aria-label="Reportar problema en WhatsApp"
+      className="text-yellow-500 hover:text-yellow-300 transition"
+    >
+      ⚠️
+    </button>
+    <div className="absolute bottom-full mb-2 w-52 bg-black bg-opacity-80 text-white text-xs rounded-md px-3 py-1 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+      Haz clic aquí si ya pagaste pero no lograste reservar.
+    </div>
+  </div>
+
+  <p className="mb-2 text-amber-400 text-xs font-light italic cursor-pointer hover:underline max-w-md mx-auto">
+    Si tuviste un error al reservar pero ya realizaste el pago,{" "}
+    <a
+      href="https://wa.me/593982945646?text=Hola,%20tengo%20un%20problema%20con%20mi%20reserva%20pero%20ya%20realic%C3%A9%20el%20pago.%20Por%20favor,%20ay%C3%BAdenme."
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-red-500 hover:text-amber-500"
+      aria-label="Notificar error en la reserva por WhatsApp"
+    >
+      notifícanos aquí
+    </a>
+    .
+  </p>
+
+
+</div>
+
+
+
+
 
       {/* Mostrar errores generales */}
       {Object.entries(errores).map(

@@ -20,11 +20,7 @@ export default function ServicioCard({ servicio, onReservar }) {
       )}
 
       <div className="flex flex-col gap-2 text-[#f1f1f1] px-2">
-        {servicio.categoria_nombre && (
-          <p className="text-sm text-yellow-400 text-center uppercase tracking-wide">
-            {servicio.categoria_nombre}
-          </p>
-        )}
+     
 
         <h3 className="text-xl font-bold text-[#ffcc66] text-center">
           {servicio.nombre}

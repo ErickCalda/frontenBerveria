@@ -50,7 +50,7 @@ export default function MediaCarousel() {
     
     <div
       ref={containerRef}
-      className="relative w-full h-[400px] md:h-[400px] overflow-hidden bg-transparent mb-24"
+      className="relative w-full h-[400px] md:h-[400px] overflow-hidden bg-transparent mb-24 mt-9"
       {...swipeHandlers}
     >
         <h1 className="font-bold text-7xl text-white mb-8 text-center">GALERIA</h1>
