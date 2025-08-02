@@ -345,14 +345,22 @@ const topRef = useRef(null);
   </div>
 
   <div className="mb-6 text-left bg-zinc-800 p-4 rounded-lg shadow-inner text-white">
-    <h4 className="text-lg font-semibold mb-2">Pasos para confirmar tu cita:</h4>
-    <ol className="list-decimal list-inside space-y-1 text-sm text-amber-300">
-      <li>Realiza el pago al número de cuenta indicado.</li>
-      <li>Haz clic en el botón de WhatsApp a continuación.</li>
-      <li>Envíanos el comprobante de pago para activar tu cita.</li> 
-      <li>Por favor llegar 10 minutos antes de la hora agendada, si se retrasa perderá su cita y el 50% de su valor cancelado.</li> 
-    </ol>
+  <h4 className="text-lg font-semibold mb-2">Pasos para confirmar tu cita:</h4>
+  <ol className="list-decimal list-inside space-y-1 text-sm text-amber-300">
+    <li>Realiza el pago al número de cuenta indicado.</li>
+    <li>Haz clic en el botón de WhatsApp a continuación.</li>
+    <li>Envíanos el comprobante de pago para activar tu cita.</li>
+  </ol>
+  
+  <div className="mt-4 bg-red-900/30 border border-red-500 p-3 rounded-lg">
+    <div className="flex items-center mb-1">
+      <span className="text-red-400 font-bold text-sm">⚠️ ADVERTENCIA</span>
+    </div>
+    <p className="text-red-300 text-sm font-medium">
+      Por favor llegar 10 minutos antes de la hora agendada, si se retrasa perderá su cita y el 50% de su valor cancelado.
+    </p>
   </div>
+</div>
 <button
   onClick={(e) => {
     e.preventDefault();
