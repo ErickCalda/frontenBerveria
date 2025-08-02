@@ -9,6 +9,7 @@ export default function AdminPanel() {
   const [actualizandoEstado, setActualizandoEstado] = useState(null);
   const [mostrarTodas, setMostrarTodas] = useState(false);
   const [fechaFiltro, setFechaFiltro] = useState("");
+  
 
   const obtenerFechaHoy = useCallback(() => new Date().toISOString().split("T")[0], []);
 
@@ -53,6 +54,47 @@ export default function AdminPanel() {
       })
       .finally(() => setActualizandoEstado(null));
   }, [cargarCitas]);
+
+
+const cambiarEstadoDeTodasLasCitasPorFecha = async (fecha) => {
+  if (!fecha) {
+    alert("Por favor selecciona una fecha primero.");
+    return;
+  }
+
+  try {
+    // Obtener las citas filtradas por fecha
+    const res = await citaService.obtenerCitas({ fecha });
+    const citasPorFecha = res.data?.data || [];
+
+    if (citasPorFecha.length === 0) {
+      alert(`No hay citas para la fecha ${fecha}.`);
+      return;
+    }
+
+    const confirmar = window.confirm(`¿Seguro que quieres cambiar el estado de ${citasPorFecha.length} cita(s) del ${fecha}?`);
+    if (!confirmar) return;
+
+    const estadoDestino = estados.find((e) => e.nombre.toLowerCase().includes("cancel"));
+    if (!estadoDestino) {
+      alert("No se encontró el estado 'Cancelada'");
+      return;
+    }
+
+    // Cambiar estado en todas las citas encontradas
+    for (const cita of citasPorFecha) {
+      await citaService.cambiarEstadoCita(cita.id, estadoDestino.id);
+    }
+
+    alert(`✅ Se cambiaron ${citasPorFecha.length} cita(s) a "${estadoDestino.nombre}".`);
+    cargarCitas();
+
+  } catch (error) {
+    console.error("Error cambiando estados:", error);
+    alert("Error al actualizar las citas.");
+  }
+};
+
 
   const citasAgrupadas = useMemo(() => {
     return citas.reduce((grupos, cita) => {
@@ -213,6 +255,18 @@ export default function AdminPanel() {
           >
             {mostrarTodas ? "Ver solo citas de hoy" : "Ver todas las citas"}
           </button>
+
+<button
+  onClick={() => cambiarEstadoDeTodasLasCitasPorFecha(fechaFiltro)}
+  disabled={!fechaFiltro}
+  className={`bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 transition-all duration-200 text-sm font-semibold shadow select-none focus:outline-none focus:ring-2 focus:ring-red-500 ${!fechaFiltro ? 'opacity-50 cursor-not-allowed' : ''}`}
+  type="button"
+  style={{ fontFamily: "'Oswald', sans-serif" }}
+>
+  Cancelar todas las citas del día seleccionado
+</button>
+
+
         </div>
 
         <Card
