@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+
+
 import { Info } from "lucide-react";
 
 
@@ -21,6 +23,7 @@ export default function FormularioReservacion({
   setError,
   clearError,
 }) {
+
 
 
   // Orden personalizado de categorías
@@ -76,24 +79,45 @@ export default function FormularioReservacion({
   const offset = (firstDayOfMonth + 6) % 7;
 
   // Manejadores para seleccionar fecha, empleado y servicio
-  const handleDateSelection = (day) => {
-    const isoDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    setFormFecha(isoDate);
-    setFormHorario("");
-    setHorarios([]);
-  };
+const handleDateSelection = (day) => {
+  const isoDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-  const selectEmpleado = (id) => {
-    setFormEmpleadoId(id.toString());
-    setFormHorario("");
-    setHorarios([]);
-  };
+  if (formFecha === isoDate) {
+    // Si es la misma fecha, no hagas nada
+    return;
+  }
 
-  const selectServicio = (id) => {
-    setFormServicioId(id.toString());
-    setFormHorario("");
-    setHorarios([]);
-  };
+  setFormFecha(isoDate);
+  setFormHorario("");
+  setHorarios([]);
+};
+
+const selectEmpleado = (id) => {
+  const nuevoId = id.toString();
+
+  if (formEmpleadoId === nuevoId) {
+    // Si ya está seleccionado, no hagas nada
+    return;
+  }
+
+  setFormEmpleadoId(nuevoId);
+  setFormHorario("");
+  setHorarios([]);
+};
+
+
+const selectServicio = (id) => {
+  const nuevoId = id.toString();
+
+  if (formServicioId === nuevoId) {
+    // Si es el mismo servicio, no hacer nada
+    return;
+  }
+
+  setFormServicioId(nuevoId);
+  setFormHorario("");
+  setHorarios([]);
+};
 
   // Para deshabilitar días pasados
   function isPastDay(day) {
@@ -136,11 +160,40 @@ const handleConfirmarReserva = async (e) => {
 };
 
 
+const topRef = useRef(null);
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
   
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 ">
+    <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 " ref={topRef}>
       <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-screen-2xl mx-auto ">
+       <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
+            <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Barberos</h3>
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-800">
+              <div className="flex gap-x-4 pb-2">
+                {empleados.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => selectEmpleado(e.id)}
+                    className={`min-w-[150px] bg-zinc-900 p-3 rounded-lg text-center border transition text-sm flex-shrink-0 ${
+                      formEmpleadoId === e.id.toString()
+                        ? "border-yellow-400 shadow-md"
+                        : "border-zinc-700 hover:border-yellow-400"
+                    }`}
+                  >
+                    <div className="w-14 h-14 mx-auto rounded-full bg-zinc-700 mb-2">
+                      <img className="rounded-full" src={e.foto_perfil} alt="" />
+                    </div>
+                    <h4 className="font-semibold text-white truncate">{e.nombre}</h4>
+                    <p className="text-xs text-zinc-400">{e.titulo}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         {/* SERVICIOS */}
         <div className=" w-full bg-[#1C1C1C] ">
           <div className="bg-[#1C1C1C] rounded-xl shadow-xl p-0 w-full">
@@ -230,30 +283,7 @@ const handleConfirmarReserva = async (e) => {
 
         {/* BARBEROS Y HORARIOS */}
         <div className="space-y-6 w-full">
-          <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
-            <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Barberos</h3>
-            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-800">
-              <div className="flex gap-x-4 pb-2">
-                {empleados.map((e) => (
-                  <button
-                    key={e.id}
-                    onClick={() => selectEmpleado(e.id)}
-                    className={`min-w-[150px] bg-zinc-900 p-3 rounded-lg text-center border transition text-sm flex-shrink-0 ${
-                      formEmpleadoId === e.id.toString()
-                        ? "border-yellow-400 shadow-md"
-                        : "border-zinc-700 hover:border-yellow-400"
-                    }`}
-                  >
-                    <div className="w-14 h-14 mx-auto rounded-full bg-zinc-700 mb-2">
-                      <img className="rounded-full" src={e.foto_perfil} alt="" />
-                    </div>
-                    <h4 className="font-semibold text-white truncate">{e.nombre}</h4>
-                    <p className="text-xs text-zinc-400">{e.titulo}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+         
 
           <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Horarios Disponibles</h3>
