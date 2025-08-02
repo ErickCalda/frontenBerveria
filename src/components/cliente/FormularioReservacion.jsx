@@ -350,7 +350,7 @@ const topRef = useRef(null);
       <li>Realiza el pago al número de cuenta indicado.</li>
       <li>Haz clic en el botón de WhatsApp a continuación.</li>
       <li>Envíanos el comprobante de pago para activar tu cita.</li> 
-      <li>Por favor llegar 10 minutos antes de la hora agendada, si se retrasa podría perder su cita y el 50% de su valor cancelado.</li> 
+      <li>Por favor llegar 10 minutos antes de la hora agendada, si se retrasa perderá su cita y el 50% de su valor cancelado.</li> 
     </ol>
   </div>
 <button
