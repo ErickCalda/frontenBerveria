@@ -226,22 +226,16 @@ export default function Home() {
                 Estilo y Elegancia en Cada Corte
               </h1>
 
-              <ul
-                className="hero-list text-white text-xs sm:text-sm md:text-base space-y-1.5 sm:space-y-2 pl-5 list-disc"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                <li>Barberos expertos con estilo único</li>
-                <li>Ambiente cómodo y moderno</li>
-                <li>Productos de alta calidad</li>
-              </ul>
+             <ul
+  className="hero-list text-white text-xs sm:text-sm md:text-base space-y-1.5 sm:space-y-2 pl-5 list-none"
+  style={{ fontFamily: "var(--font-display)" }}
+>
+  <li>Barberos expertos con estilo único</li>
+  <li>Ambiente cómodo y moderno</li>
+  <li>Productos de alta calidad</li>
+</ul>
 
-              <button
-                onClick={handleReservaClick}
-                className="hero-button bg-amber-300 text-black px-5 sm:px-7 md:px-8 py-2 sm:py-2.5 md:py-3 font-semibold rounded-[5px] hover:bg-[#5C452B] hover:text-white transition-colors duration-300 w-max mx-auto md:mx-0"
-                style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem" }}
-              >
-                Reserva Ya
-              </button>
+
             </div>
 
             <div

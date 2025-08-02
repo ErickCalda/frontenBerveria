@@ -30,7 +30,7 @@ export default function QuienesSomos() {
         </div>
 <div ref={imageRef} className="w-full flex justify-center md:w-auto">
   <img
-    src="/assets/FOTOPRINCIPAL.webp"
+    src="/assets/FOTOPRINCIPAL.jpeg"
     alt="Barbería God Meets 2.0"
     style={{ height: '400px', width: '300px', objectFit: 'cover' }}
     className="rounded-xl shadow-xl w-full md:w-auto"
