@@ -43,7 +43,7 @@ export default function Footer() {
         </div>
         <div>
           <h4 className="font-semibold mb-2">Horario</h4>
-          <p className="text-sm">Lun - Sab 9:00am - 7:45pm  </p>
+          <p className="text-sm">Lun - Sab 9:00am - 7:00pm  </p>
            <p className="text-sm">Dom 9:30am - 2:00pm </p>
           
         </div>
