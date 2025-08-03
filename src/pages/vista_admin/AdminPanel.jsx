@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { gsap } from "gsap";
 import citaService from "../../service/citaService";
-
+import AdminAusencias from './obtenerTodasLasAusencias';
 export default function AdminPanel() {
   const [citas, setCitas] = useState([]);
   const [estados, setEstados] = useState([]);
@@ -218,6 +218,10 @@ const cambiarEstadoDeTodasLasCitasPorFecha = async (fecha) => {
           Panel de Citas
         </h2>
 
+<div>
+      {/* ... demás contenido del panel */}
+      <AdminAusencias />
+    </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-wrap">
             <label

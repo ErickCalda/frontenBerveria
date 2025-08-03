@@ -176,37 +176,39 @@ function Reservar() {
   );
 
   // Manejo de submit con useCallback
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      const [inicio, fin] = formHorario.split("-");
-      try {
-        await procesarReservacion({
-          empleadoId: parseInt(formEmpleadoId),
-          servicios: [{ id: parseInt(formServicioId), cantidad: 1 }],
-          fecha: formFecha,
-          horario: { inicio, fin },
-          total: formTotal,
-        });
+const handleSubmit = useCallback(
+  async (e) => {
+    e.preventDefault();
+    const [inicio, fin] = formHorario.split("-");
+    try {
+      await procesarReservacion({
+        empleadoId: parseInt(formEmpleadoId),
+        servicios: [{ id: parseInt(formServicioId), cantidad: 1 }],
+        fecha: formFecha,
+        horario: { inicio, fin },
+        total: formTotal,
+      });
 
-        setTipoMensaje("success");
-        setMensaje("Cita creada correctamente");
+      setTipoMensaje("success");
+      setMensaje("Cita creada correctamente");
 
-        const nuevas = await getMisCitas();
-        setCitas(nuevas);
-      }catch (error) {
-  setTipoMensaje("error");
-  if (error.response?.data?.mensaje) {
-    setMensaje(error.response.data.mensaje);
-  } else {
-    setMensaje("Error al crear cita");
-  }
-  throw error; // <-- Esto provoca que siempre lance error, incluso si no quieres
-}
+      const nuevas = await getMisCitas();
+      setCitas(nuevas);
 
-    },
-    [formEmpleadoId, formServicioId, formFecha, formHorario, formTotal]
-  );
+      return true;  // <-- Retorna true si todo fue bien
+    } catch (error) {
+      const backendMsg =
+        error?.response?.data?.message || "Error al crear cita";
+      setTipoMensaje("error");
+      setMensaje(backendMsg);
+
+      return false; // <-- Retorna false si hubo error
+    }
+  },
+  [formEmpleadoId, formServicioId, formFecha, formHorario, formTotal]
+);
+
+
 
   // Limpiar mensaje automáticamente
   useEffect(() => {

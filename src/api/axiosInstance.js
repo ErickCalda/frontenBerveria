@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "https://barbershor2.onrender.com/api",
+  baseURL: "http://localhost:5000/api",
 });
 
 // ⛑ Añade el token automáticamente antes de cada request

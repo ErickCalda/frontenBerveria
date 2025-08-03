@@ -170,7 +170,10 @@ const topRef = useRef(null);
   return (
     <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 " ref={topRef}>
       <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-screen-2xl mx-auto ">
-       <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
+
+
+<div className="h-2/6">
+            <div className="bg-zinc-800 rounded-xl shadow-xl p-6 ">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Barberos</h3>
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-800">
               <div className="flex gap-x-4 pb-2">
@@ -194,96 +197,107 @@ const topRef = useRef(null);
               </div>
             </div>
           </div>
+
+</div>
+
         {/* SERVICIOS */}
-        <div className=" w-full bg-[#1C1C1C] ">
-          <div className="bg-[#1C1C1C] rounded-xl shadow-xl p-0 w-full">
-            <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Servicios</h3>
+<div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6">
+  {/* CONTENEDOR DE SERVICIOS */}
+  <div className="bg-[#1C1C1C] rounded-xl shadow-xl p-5">
+    <h3 className="text-white text-xl mb-4 border-b border-zinc-600 pb-2">Servicios</h3>
 
-            {/* Botones filtro categorías */}
-            <div className="flex gap-3 mb-4 flex-wrap">
-              {categorias.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCategoriaSeleccionada(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition
-                    ${
-                      categoriaSeleccionada === cat
-                        ? "bg-yellow-400 text-black"
-                        : "bg-zinc-700 text-white hover:bg-yellow-500 hover:text-black"
-                    }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+    {/* Botones filtro categorías */}
+    <div className="flex flex-wrap gap-3 mb-4">
+      {categorias.map((cat) => (
+        <button
+          key={cat}
+          onClick={() => setCategoriaSeleccionada(cat)}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition
+            ${
+              categoriaSeleccionada === cat
+                ? "bg-yellow-400 text-black"
+                : "bg-zinc-700 text-white hover:bg-yellow-500 hover:text-black"
+            }`}
+        >
+          {cat}
+        </button>
+      ))}
+    </div>
 
-            {/* Servicios filtrados */}
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 max-h-80 overflow-y-auto scrollbar-thin">
-              {serviciosFiltrados.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => selectServicio(s.id)}
-                  className={`relative p-4 rounded-lg border text-left transition text-base ${
-                    formServicioId === s.id.toString()
-                      ? "border-yellow-400 bg-yellow-100/10 text-yellow-300"
-                      : "border-zinc-700 hover:border-yellow-500 text-white"
-                  }`}
-                >
-                  <div className="font-bold text-white mb-1">{s.nombre}</div>
-                  <div className="text-zinc-400 text-sm">{s.categoria_nombre}</div>
-                  <div className="text-zinc-400 text-sm">
-                    Tiempo: <span className="text-amber-400" style={{ fontSize: "13px" }}>30min</span>
-                  </div>
-                  <div className="mt-1 font-semibold text-yellow-300 text-lg">${s.precio}</div>
-                </button>
-              ))}
-            </div>
+    {/* Servicios filtrados */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[320px] overflow-y-auto scrollbar-thin pr-2">
+      {serviciosFiltrados.map((s) => (
+        <button
+          key={s.id}
+          onClick={() => selectServicio(s.id)}
+          className={`relative p-4 rounded-lg border text-left transition text-base ${
+            formServicioId === s.id.toString()
+              ? "border-yellow-400 bg-yellow-100/10 text-yellow-300"
+              : "border-zinc-700 hover:border-yellow-500 text-white"
+          }`}
+        >
+          <div className="font-bold text-white mb-1">{s.nombre}</div>
+          <div className="text-zinc-400 text-sm">{s.categoria_nombre}</div>
+          <div className="text-zinc-400 text-sm">
+            Tiempo: <span className="text-amber-400 text-[13px]">30min</span>
           </div>
+          <div className="mt-1 font-semibold text-yellow-300 text-lg">${s.precio}</div>
+        </button>
+      ))}
+    </div>
+  </div>
 
-          {/* FECHA */}
-          <div className="bg-zinc-800 rounded-xl p-6 shadow-xl w-full">
-            <h3 className="text-white text-xl mb-4 border-b border-zinc-600 pb-2">Fecha</h3>
-            <div className="grid grid-cols-7 text-base text-zinc-400 font-medium text-center mb-2">
-              {weekdays.map((d, idx) => (
-                <div key={idx}>{d}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {Array(offset).fill(null).map((_, i) => <div key={"empty-" + i}></div>)}
-              {daysInCurrentMonth.map((day) => {
-                const date = new Date(currentYear, currentMonth, day);
-                const localISO = date.toLocaleDateString("sv-SE");
-                const selected = formFecha === localISO;
-                const past = isPastDay(day);
+  {/* CONTENEDOR DE FECHA */}
+  <div className="bg-zinc-800 rounded-xl p-5 shadow-xl">
+    <h3 className="text-white text-xl mb-4 border-b border-zinc-600 pb-2">Fecha</h3>
+    
+    <div className="grid grid-cols-7 text-sm sm:text-base text-zinc-400 font-medium text-center mb-2">
+      {weekdays.map((d, idx) => (
+        <div key={idx}>{d}</div>
+      ))}
+    </div>
 
-                return (
-                  <button
-                    key={day}
-                    onClick={() => !past && handleDateSelection(day)}
-                    disabled={past}
-                    className={`w-12 h-12 rounded-full font-semibold text-base transition flex items-center justify-center
-                      ${selected ? "bg-yellow-400 text-black shadow" : ""}
-                      ${!selected && !past ? "hover:bg-zinc-700 text-white" : ""}
-                      ${past ? "text-zinc-500 cursor-not-allowed" : ""}
-                      ${day === today.getDate() && !past ? "border border-yellow-400" : ""}
-                    `}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-            {errores.fecha && (
-              <div className="mt-3 bg-red-100 border border-red-400 text-red-700 rounded-md px-3 py-2 text-base font-medium">
-                {errores.fecha}
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="grid grid-cols-7 gap-1 text-center">
+      {Array(offset).fill(null).map((_, i) => <div key={"empty-" + i}></div>)}
+      {daysInCurrentMonth.map((day) => {
+        const date = new Date(currentYear, currentMonth, day);
+        const localISO = date.toLocaleDateString("sv-SE");
+        const selected = formFecha === localISO;
+        const past = isPastDay(day);
+
+        return (
+          <button
+            key={day}
+            onClick={() => !past && handleDateSelection(day)}
+            disabled={past}
+            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full font-semibold text-sm sm:text-base transition flex items-center justify-center
+              ${selected ? "bg-yellow-400 text-black shadow" : ""}
+              ${!selected && !past ? "hover:bg-zinc-700 text-white" : ""}
+              ${past ? "text-zinc-500 cursor-not-allowed" : ""}
+              ${day === today.getDate() && !past ? "border border-yellow-400" : ""}
+            `}
+          >
+            {day}
+          </button>
+        );
+      })}
+    </div>
+
+    {errores.fecha && (
+      <div className="mt-3 bg-red-100 border border-red-400 text-red-700 rounded-md px-3 py-2 text-base font-medium">
+        {errores.fecha}
+      </div>
+    )}
+  </div>
+</div>
 
         {/* BARBEROS Y HORARIOS */}
         <div className="space-y-6 w-full">
-         
+
+
+
+  
+
 
           <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Horarios Disponibles</h3>
@@ -345,38 +359,29 @@ const topRef = useRef(null);
   </div>
 
   <div className="mb-6 text-left bg-zinc-800 p-4 rounded-lg shadow-inner text-white">
-  <h4 className="text-lg font-semibold mb-2">Pasos para confirmar tu cita:</h4>
-  <ol className="list-decimal list-inside space-y-1 text-sm text-amber-300">
-    <li>Realiza el pago al número de cuenta indicado.</li>
-    <li>Haz clic en el botón de WhatsApp a continuación.</li>
-    <li>Envíanos el comprobante de pago para activar tu cita.</li>
-  </ol>
-  
-  <div className="mt-4 bg-red-900/30 border border-red-500 p-3 rounded-lg">
-    <div className="flex items-center mb-1">
-      <span className="text-red-400 font-bold text-sm">⚠️ ADVERTENCIA</span>
-    </div>
-    <p className="text-red-300 text-sm font-medium">
-      Por favor llegar 10 minutos antes de la hora agendada, si se retrasa perderá su cita y el 50% de su valor cancelado.
-    </p>
+    <h4 className="text-lg font-semibold mb-2">Pasos para confirmar tu cita:</h4>
+    <ol className="list-decimal list-inside space-y-1 text-sm text-amber-300">
+      <li>Realiza el pago al número de cuenta indicado.</li>
+      <li>Haz clic en el botón de WhatsApp a continuación.</li>
+      <li>Envíanos el comprobante de pago para activar tu cita.</li> 
+      <li>Por favor llegar 10 minutos antes de la hora agendada, si se retrasa podría perder su cita y el 50% de su valor cancelado.</li> 
+    </ol>
   </div>
-</div>
+
+
 <button
   onClick={async (e) => {
     e.preventDefault();
-    try {
-      await handleSubmit(e); // Esperar que termine y lance error si falla
+    const exito = await handleSubmit(e); // Recibe true/false
 
-      // Si llega aquí, no hubo error
-      const newWindow = window.open("", "_blank");
+    if (exito) {
       setTimeout(() => {
+        const newWindow = window.open("", "_blank");
         newWindow.location.href =
           "https://wa.me/593982945646?text=Hola,%20quiero%20realizar%20la%20verificaci%C3%B3n%20de%20mi%20pago%20y%20activar%20mi%20cita.%20Muchas%20gracias.";
       }, 3000);
-    } catch (error) {
-      // Aquí puedes manejar el error si quieres, pero NO abrirás el link
-      console.log("No se abrió WhatsApp porque ocurrió un error en la reserva.");
     }
+    // Si exito es false, no hace nada (no redirige)
   }}
   className="inline-block bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-8 py-3 mb-10 text-white font-semibold rounded-lg shadow-lg text-base"
 >
