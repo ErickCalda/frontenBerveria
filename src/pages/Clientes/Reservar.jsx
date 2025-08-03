@@ -201,7 +201,7 @@ function Reservar() {
   } else {
     setMensaje("Error al crear cita");
   }
-  throw error; // <-- Esto provoca que siempre lance error, incluso si no quieres
+  throw error; 
 }
 
     },

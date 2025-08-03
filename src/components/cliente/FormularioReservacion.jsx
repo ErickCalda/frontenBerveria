@@ -368,7 +368,7 @@ const topRef = useRef(null);
       await handleSubmit(e); // Esperar que termine y lance error si falla
 
       // Si llega aquí, no hubo error
-      const newWindow = window.open("", "_blank");
+      const newWindow = window.open(" ", "_blank");
       setTimeout(() => {
         newWindow.location.href =
           "https://wa.me/593982945646?text=Hola,%20quiero%20realizar%20la%20verificaci%C3%B3n%20de%20mi%20pago%20y%20activar%20mi%20cita.%20Muchas%20gracias.";

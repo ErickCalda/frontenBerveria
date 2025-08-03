@@ -223,7 +223,7 @@ const cambiarEstadoDeTodasLasCitasPorFecha = async (fecha) => {
       <AdminAusencias />
     </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap border-2">
             <label
               htmlFor="fechaFiltro"
               className="text-sm font-medium select-none"

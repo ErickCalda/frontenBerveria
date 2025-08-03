@@ -74,7 +74,7 @@ const EditarAusencia = ({ ausencia, onActualizado }) => {
       </div>
 
       <div>
-        <label className="block text-[#34495e] mb-1">¿Aprobar?</label>
+        <label className="block text-[#34495e] mb-1">¿desactivar?</label>
         <select
           value={aprobada}
           onChange={(e) => setAprobada(Number(e.target.value))}
