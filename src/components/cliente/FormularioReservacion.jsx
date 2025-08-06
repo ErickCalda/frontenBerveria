@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { AuthContext } from "../../contexts/AuthContext";
 
 import { Info } from "lucide-react";
 
@@ -23,6 +23,7 @@ export default function FormularioReservacion({
   setError,
   clearError,
 }) {
+  const { user } = useContext(AuthContext);
 
 
 
@@ -165,6 +166,22 @@ const topRef = useRef(null);
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
+  // Función para generar el mensaje personalizado de WhatsApp
+  const generarMensajeWhatsApp = () => {
+    const nombre = user?.nombre || "Usuario";
+    const email = user?.email || "No disponible";
+    
+    const mensaje = `Hola, quiero realizar la verificación de mi pago y activar mi cita.
+
+Mis datos:
+- Nombre: ${nombre}
+- Email: ${email}
+
+Muchas gracias.`;
+    
+    return encodeURIComponent(mensaje);
+  };
   
 
   return (
@@ -370,8 +387,8 @@ const topRef = useRef(null);
       // Si llega aquí, no hubo error
       const newWindow = window.open(" ", "_blank");
       setTimeout(() => {
-        newWindow.location.href =
-          "https://wa.me/593982945646?text=Hola,%20quiero%20realizar%20la%20verificaci%C3%B3n%20de%20mi%20pago%20y%20activar%20mi%20cita.%20Muchas%20gracias.";
+        const mensajePersonalizado = generarMensajeWhatsApp();
+        newWindow.location.href = `https://wa.me/593982945646?text=${mensajePersonalizado}`;
       }, 3000);
     } catch (error) {
       // Aquí puedes manejar el error si quieres, pero NO abrirás el link
@@ -390,12 +407,14 @@ const topRef = useRef(null);
   <div className="mb-2 flex items-center justify-center gap-1 text-yellow-400 text-xs select-none cursor-pointer relative group max-w-md mx-auto">
     <span>¿Problemas con tu reserva?</span>
     <button
-      onClick={() =>
+      onClick={() => {
+        const mensajePersonalizado = generarMensajeWhatsApp();
+        const mensajeProblema = encodeURIComponent("Ya realicé el pago pero no puedo reservar mi cita. Necesito ayuda, por favor.");
         window.open(
-          "https://wa.me/593982945646?text=Hola,%20ya%20realicé%20el%20pago%20pero%20no%20puedo%20reservar%20mi%20cita.%20Necesito%20ayuda,%20por%20favor.",
+          `https://wa.me/593982945646?text=${mensajePersonalizado}%0A%0A${mensajeProblema}`,
           "_blank"
-        )
-      }
+        );
+      }}
       aria-label="Reportar problema en WhatsApp"
       className="text-yellow-500 hover:text-yellow-300 transition"
     >
@@ -409,10 +428,15 @@ const topRef = useRef(null);
   <p className="mb-2 text-amber-400 text-xs font-light italic cursor-pointer hover:underline max-w-md mx-auto">
     Si tuviste un error al reservar pero ya realizaste el pago,{" "}
     <a
-      href="https://wa.me/593982945646?text=Hola,%20tengo%20un%20problema%20con%20mi%20reserva%20pero%20ya%20realic%C3%A9%20el%20pago.%20Por%20favor,%20ay%C3%BAdenme."
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-red-500 hover:text-amber-500"
+      onClick={() => {
+        const mensajePersonalizado = generarMensajeWhatsApp();
+        const mensajeError = encodeURIComponent("Tengo un problema con mi reserva pero ya realicé el pago. Por favor, ayúdenme.");
+        window.open(
+          `https://wa.me/593982945646?text=${mensajePersonalizado}%0A%0A${mensajeError}`,
+          "_blank"
+        );
+      }}
+      className="text-red-500 hover:text-amber-500 cursor-pointer"
       aria-label="Notificar error en la reserva por WhatsApp"
     >
       notifícanos aquí

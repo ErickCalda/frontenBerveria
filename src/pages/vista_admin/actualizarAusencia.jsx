@@ -1,19 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { actualizarAusencia } from "../../service/ausenciaEmpleadoService";
+import { 
+  generarHorariosDisponibles,
+  formatearFechaHora, 
+  validarHorarioTrabajo,
+  obtenerFechaActual,
+  extraerHoraDeFecha,
+  convertirLocalAUTC
+} from "../../utils/ausenciaUtils";
 
 const EditarAusencia = ({ ausencia, onActualizado }) => {
   const [motivo, setMotivo] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFin, setHoraFin] = useState("");
   const [aprobada, setAprobada] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   useEffect(() => {
     if (ausencia) {
+      console.log("🕐 [CARGAR] Ausencia recibida:", ausencia);
+      
       setMotivo(ausencia.motivo || "");
       setFechaInicio(ausencia.fecha_inicio?.slice(0, 10) || "");
       setFechaFin(ausencia.fecha_fin?.slice(0, 10) || "");
+      
+      // Extraer horas de las fechas existentes (convertir de UTC a local)
+      if (ausencia.fecha_inicio) {
+        const horaInicioStr = extraerHoraDeFecha(ausencia.fecha_inicio);
+        console.log("🕐 [CARGAR] Hora inicio convertida:", {
+          fechaInicioBD: ausencia.fecha_inicio,
+          horaInicioLocal: horaInicioStr
+        });
+        setHoraInicio(horaInicioStr || "");
+      }
+      
+      if (ausencia.fecha_fin) {
+        const horaFinStr = extraerHoraDeFecha(ausencia.fecha_fin);
+        console.log("🕐 [CARGAR] Hora fin convertida:", {
+          fechaFinBD: ausencia.fecha_fin,
+          horaFinLocal: horaFinStr
+        });
+        setHoraFin(horaFinStr || "");
+      }
+      
       setAprobada(Number(ausencia.aprobada) || 0);
     }
   }, [ausencia]);
@@ -25,12 +56,39 @@ const EditarAusencia = ({ ausencia, onActualizado }) => {
     setLoading(true);
     setError(null);
 
+    console.log("🕐 [GUARDAR] Datos del formulario:", {
+      fechaInicio,
+      horaInicio,
+      horaFin,
+      motivo
+    });
+
+    // Validar que el horario esté dentro de los horarios de trabajo
+    if (!validarHorarioTrabajo(fechaInicio, horaInicio, horaFin)) {
+      setError("El horario seleccionado no está dentro de los horarios de trabajo.");
+      setLoading(false);
+      return;
+    }
+
+    // Convertir horas locales a UTC para guardar en la base de datos
+    const fechaInicioUTC = convertirLocalAUTC(fechaInicio, horaInicio);
+    const fechaFinUTC = convertirLocalAUTC(fechaInicio, horaFin);
+
+    console.log("🕐 [GUARDAR] Conversión a UTC:", {
+      horaLocalInicio: horaInicio,
+      horaLocalFin: horaFin,
+      fechaInicioUTC,
+      fechaFinUTC
+    });
+
     const datosActualizados = {
       motivo,
-      fecha_inicio: fechaInicio,
-      fecha_fin: fechaFin,
+      fecha_inicio: fechaInicioUTC,
+      fecha_fin: fechaFinUTC,
       aprobada: aprobada === 1,
     };
+
+    console.log("🕐 [GUARDAR] Datos a enviar a BD:", datosActualizados);
 
     try {
       await actualizarAusencia(ausencia.id, datosActualizados);
@@ -63,14 +121,40 @@ const EditarAusencia = ({ ausencia, onActualizado }) => {
       </div>
 
       <div>
-        <label className="block text-[#34495e] mb-1">Fecha Fin:</label>
-        <input
-          type="date"
-          value={fechaFin}
-          onChange={(e) => setFechaFin(e.target.value)}
+        <label className="block text-[#34495e] mb-1">Hora de Inicio:</label>
+        <select
+          value={horaInicio}
+          onChange={(e) => setHoraInicio(e.target.value)}
           className="w-full text-blue-600 p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#cce7f6]"
           required
-        />
+        >
+          <option value="">Seleccionar hora inicio</option>
+          {fechaInicio && generarHorariosDisponibles(new Date(fechaInicio)).map((horario, index) => (
+            <option key={index} value={horario.inicio}>
+              {horario.inicio}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-[#34495e] mb-1">Hora de Fin:</label>
+        <select
+          value={horaFin}
+          onChange={(e) => setHoraFin(e.target.value)}
+          className="w-full text-blue-600 p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#cce7f6]"
+          required
+        >
+          <option value="">Seleccionar hora fin</option>
+          {fechaInicio && generarHorariosDisponibles(new Date(fechaInicio)).map((horario, index) => (
+            <option key={index} value={horario.fin}>
+              {horario.fin}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Selecciona las horas de inicio y fin de la ausencia
+        </p>
       </div>
 
       <div>
@@ -84,6 +168,8 @@ const EditarAusencia = ({ ausencia, onActualizado }) => {
           <option value={0}>No</option>
         </select>
       </div>
+
+
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 

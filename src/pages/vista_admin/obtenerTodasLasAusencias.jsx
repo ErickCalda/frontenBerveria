@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { obtenerTodasLasAusencias } from "../../service/ausenciaEmpleadoService";
 import EditarAusencia from "./actualizarAusencia";
+import { formatearFechaHora, formatearRangoFechas, extraerHoraDeFecha } from "../../utils/ausenciaUtils";
 
 const AdminAusencias = () => {
   const [ausencias, setAusencias] = useState([]);
@@ -58,11 +59,10 @@ const AdminAusencias = () => {
             <thead className="bg-[#cce7f6] text-[#34495e] text-sm">
               <tr>
                 <th className="px-4 py-2 text-left">Empleado</th>
-                <th className="px-4 py-2 text-left">Desde</th>
-                <th className="px-4 py-2 text-left">Hasta</th>
-                <th className="px-4 py-2 text-left">Tipo</th>
+                <th className="px-4 py-2 text-left">Fecha</th>
+                <th className="px-4 py-2 text-left">Horario</th>
+                <th className="px-4 py-2 text-left">Motivo</th>
                 <th className="px-4 py-2 text-left">Estado</th>
-            
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -74,18 +74,32 @@ const AdminAusencias = () => {
                   title="Click para editar"
                 >
                   <td className="px-4 py-2 text-blue-600 border-b">{ausencia.empleado_nombre || "N/A"}</td>
-<td className="px-4 py-2 text-blue-600 border-b">
-  {ausencia.fecha_inicio ? ausencia.fecha_inicio.slice(0, 10) : "N/A"}
-</td>
-<td className="px-4 py-2 text-blue-600 border-b">
-  {ausencia.fecha_fin ? ausencia.fecha_fin.slice(0, 10) : "N/A"}
-</td>
-
-                  <td className="px-4 py-2 text-blue-600 border-b">{ausencia.tipo || "-"}</td>
-                  <td className={`px-4 py-2 border-b font-medium ${parseInt(ausencia.aprobada, 10) === 1 ? "text-green-600" : "text-yellow-700"}`}>
-                    {parseInt(ausencia.aprobada, 10) === 1 ? "Aprobada" : "desactivado"}
+                  <td className="px-4 py-2 text-blue-600 border-b">
+                    {ausencia.fecha_inicio ? formatearFechaHora(ausencia.fecha_inicio, 'corta') : "N/A"}
                   </td>
-                
+                  <td className="px-4 py-2 text-blue-600 border-b">
+                    {ausencia.fecha_inicio && ausencia.fecha_fin 
+                      ? (() => {
+                          const horaInicio = extraerHoraDeFecha(ausencia.fecha_inicio);
+                          const horaFin = extraerHoraDeFecha(ausencia.fecha_fin);
+                          
+                          console.log("🕐 [MOSTRAR] Conversión de UTC a local:", {
+                            fechaInicioBD: ausencia.fecha_inicio,
+                            fechaFinBD: ausencia.fecha_fin,
+                            horaInicioLocal: horaInicio,
+                            horaFinLocal: horaFin
+                          });
+                          
+                          return horaInicio && horaFin ? `${horaInicio} - ${horaFin}` : "N/A";
+                        })()
+                      : "N/A"}
+                  </td>
+                  <td className="px-4 py-2 text-blue-600 border-b">
+                    {ausencia.motivo || "-"}
+                  </td>
+                  <td className={`px-4 py-2 border-b font-medium ${parseInt(ausencia.aprobada, 10) === 1 ? "text-green-600" : "text-yellow-700"}`}>
+                    {parseInt(ausencia.aprobada, 10) === 1 ? "Aprobada" : "Desactivada"}
+                  </td>
                 </tr>
               ))}
             </tbody>
