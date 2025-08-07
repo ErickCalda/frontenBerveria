@@ -39,6 +39,7 @@ export const generarHorariosDisponibles = (fecha) => {
       { inicio: '11:15', fin: '11:45' },
       { inicio: '11:45', fin: '12:15' },
       { inicio: '12:15', fin: '12:45' },
+      { inicio: '12:45', fin: '14:15' },
       { inicio: '14:15', fin: '14:45' },
       { inicio: '14:45', fin: '15:15' },
       { inicio: '15:15', fin: '15:45' },
