@@ -125,24 +125,9 @@ function Reservar() {
         return true;
       });
 
-      // Horarios ocupados solo del empleado en la fecha
-      const ocupadasSet = new Set(
-        citas
-          .filter(
-            (c) =>
-              c.fecha_hora_inicio.startsWith(formFecha) &&
-              c.empleado_id === parseInt(formEmpleadoId)
-          )
-          .map((c) => new Date(c.fecha_hora_inicio).toTimeString().slice(0, 5))
-      );
-
-      const finalDisponibles = disponibles.filter(
-        (h) => !ocupadasSet.has(h.inicio)
-      );
-
       setHorariosPorEmpleado((prev) => ({
         ...prev,
-        [formEmpleadoId]: finalDisponibles,
+        [formEmpleadoId]: disponibles,
       }));
 
       clearError("horarios");

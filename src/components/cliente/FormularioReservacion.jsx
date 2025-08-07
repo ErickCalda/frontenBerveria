@@ -8,7 +8,6 @@ export default function FormularioReservacion({
   servicios,
   empleados,
   horarios,
-  horariosOcupados = [], // <-- Recibe horarios ocupados como array de strings "HH:mm-HH:mm"
   setHorarios,
   errores,
   formServicioId,
@@ -132,11 +131,8 @@ const selectServicio = (id) => {
     return dateToCheck < today;
   }
 
-  // Filtrar horarios para excluir los ocupados
-  const horariosDisponibles = horarios.filter(h => {
-    const rango = `${h.inicio}-${h.fin}`;
-    return !horariosOcupados.includes(rango);
-  });
+  // Los horarios ya vienen filtrados del backend
+  const horariosDisponibles = horarios;
 
 
 
