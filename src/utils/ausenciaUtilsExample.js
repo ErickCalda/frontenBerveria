@@ -11,6 +11,10 @@ import {
   convertirMinutosAHora,
   formatearFechaHora,
   validarHorarioTrabajo,
+  validarAusencia,
+  esAusenciaPeriodoLargo,
+  convertirAusenciaAUTC,
+  formatearAusencia,
   filtrarHorariosDisponibles,
   validarConflictosReservas,
   obtenerFechaActual,
@@ -79,6 +83,68 @@ const ejemploValidarHorario = () => {
   
   const horaInvalida = validarHorarioTrabajo(fecha, '20:00', '21:00');
   console.log('¿Es horario válido?', horaInvalida); // false
+};
+
+// Ejemplo 4.1: Validar ausencias (nuevo)
+const ejemploValidarAusencia = () => {
+  // Ausencia por horas específicas
+  const ausenciaHoras = validarAusencia('2024-01-15', '2024-01-15', '14:15', '14:45');
+  console.log('¿Ausencia por horas válida?', ausenciaHoras); // true
+  
+  // Ausencia por período largo
+  const ausenciaPeriodo = validarAusencia('2024-01-15', '2024-01-20');
+  console.log('¿Ausencia por período válida?', ausenciaPeriodo); // true
+  
+  // Ausencia inválida (fecha fin anterior a inicio)
+  const ausenciaInvalida = validarAusencia('2024-01-20', '2024-01-15');
+  console.log('¿Ausencia inválida?', ausenciaInvalida); // false
+};
+
+// Ejemplo 4.2: Detectar tipo de ausencia
+const ejemploDetectarTipoAusencia = () => {
+  // Ausencia por horas
+  const esPeriodoLargo1 = esAusenciaPeriodoLargo('2024-01-15', '2024-01-15', '14:15', '14:45');
+  console.log('¿Es período largo (horas)?', esPeriodoLargo1); // false
+  
+  // Ausencia por período
+  const esPeriodoLargo2 = esAusenciaPeriodoLargo('2024-01-15', '2024-01-20');
+  console.log('¿Es período largo (días)?', esPeriodoLargo2); // true
+  
+  // Ausencia por período con horas 00:00-23:59
+  const esPeriodoLargo3 = esAusenciaPeriodoLargo('2024-01-15', '2024-01-15', '00:00', '23:59');
+  console.log('¿Es período largo (día completo)?', esPeriodoLargo3); // true
+};
+
+// Ejemplo 4.3: Convertir ausencia a UTC
+const ejemploConvertirAusenciaAUTC = () => {
+  // Ausencia por horas
+  const ausenciaHorasUTC = convertirAusenciaAUTC('2024-01-15', '2024-01-15', '17:15', '17:45');
+  console.log('Ausencia por horas UTC:', ausenciaHorasUTC);
+  // Resultado: { fecha_inicio: "2024-01-15 22:15:00", fecha_fin: "2024-01-15 22:45:00" }
+  
+  // Ausencia por período
+  const ausenciaPeriodoUTC = convertirAusenciaAUTC('2024-01-15', '2024-01-20');
+  console.log('Ausencia por período UTC:', ausenciaPeriodoUTC);
+  // Resultado: { fecha_inicio: "2024-01-15 00:00:00", fecha_fin: "2024-01-20 23:59:59" }
+};
+
+// Ejemplo 4.4: Formatear ausencia para mostrar
+const ejemploFormatearAusencia = () => {
+  const ausenciaHoras = {
+    fecha_inicio: '2024-01-15T22:15:00',
+    fecha_fin: '2024-01-15T22:45:00'
+  };
+  
+  const ausenciaPeriodo = {
+    fecha_inicio: '2024-01-15T00:00:00',
+    fecha_fin: '2024-01-20T23:59:59'
+  };
+  
+  console.log('Ausencia por horas:', formatearAusencia(ausenciaHoras));
+  // Resultado: "15/01/2024, 17:15 - 17:15 a 17:45"
+  
+  console.log('Ausencia por período:', formatearAusencia(ausenciaPeriodo));
+  // Resultado: "15/01/2024, 00:00 - 20/01/2024, 23:59"
 };
 
 // Ejemplo 5: Filtrar horarios disponibles excluyendo ausencias
@@ -192,38 +258,55 @@ const ejemploConvertirHoras = () => {
 const ejemploUsoEnComponente = () => {
   // En un componente de selección de ausencias
   const [fechaSeleccionada, setFechaSeleccionada] = useState('');
+  const [fechaFinSeleccionada, setFechaFinSeleccionada] = useState('');
+  const [tipoAusencia, setTipoAusencia] = useState('horas');
   const [horarioSeleccionado, setHorarioSeleccionado] = useState('');
   const [opcionesHorarios, setOpcionesHorarios] = useState([]);
   
   // Cuando cambia la fecha, generar opciones de horarios
   useEffect(() => {
-    if (fechaSeleccionada) {
+    if (fechaSeleccionada && tipoAusencia === 'horas') {
       const opciones = generarOpcionesHorarios(fechaSeleccionada);
       setOpcionesHorarios(opciones);
     }
-  }, [fechaSeleccionada]);
+  }, [fechaSeleccionada, tipoAusencia]);
   
   // Validar antes de enviar
   const handleSubmit = () => {
-    if (!fechaSeleccionada || !horarioSeleccionado) {
-      alert('Por favor selecciona fecha y horario');
+    if (!fechaSeleccionada || !fechaFinSeleccionada) {
+      alert('Por favor selecciona fechas de inicio y fin');
       return;
     }
     
-    const [horaInicio, horaFin] = horarioSeleccionado.split('-');
+    let horaInicio = null, horaFin = null;
     
-    if (!validarHorarioTrabajo(fechaSeleccionada, horaInicio, horaFin)) {
-      alert('El horario seleccionado no es válido');
+    if (tipoAusencia === 'horas') {
+      if (!horarioSeleccionado) {
+        alert('Por favor selecciona un horario');
+        return;
+      }
+      [horaInicio, horaFin] = horarioSeleccionado.split('-');
+    }
+    
+    if (!validarAusencia(fechaSeleccionada, fechaFinSeleccionada, horaInicio, horaFin)) {
+      alert('Los datos de la ausencia no son válidos');
       return;
     }
+    
+    // Convertir a UTC
+    const fechasUTC = convertirAusenciaAUTC(fechaSeleccionada, fechaFinSeleccionada, horaInicio, horaFin);
     
     // Proceder con el envío
-    console.log('Datos válidos, enviando...');
+    console.log('Datos válidos, enviando...', fechasUTC);
   };
   
   return {
     fechaSeleccionada,
     setFechaSeleccionada,
+    fechaFinSeleccionada,
+    setFechaFinSeleccionada,
+    tipoAusencia,
+    setTipoAusencia,
     horarioSeleccionado,
     setHorarioSeleccionado,
     opcionesHorarios,
@@ -238,6 +321,10 @@ export {
   ejemploGenerarOpcionesAmplios,
   ejemploFormatearFechas,
   ejemploValidarHorario,
+  ejemploValidarAusencia,
+  ejemploDetectarTipoAusencia,
+  ejemploConvertirAusenciaAUTC,
+  ejemploFormatearAusencia,
   ejemploFiltrarHorarios,
   ejemploValidarConflictos,
   ejemploFechaActual,

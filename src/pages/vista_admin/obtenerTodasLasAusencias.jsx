@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { obtenerTodasLasAusencias } from "../../service/ausenciaEmpleadoService";
 import EditarAusencia from "./actualizarAusencia";
-import { formatearFechaHora, formatearRangoFechas, extraerHoraDeFecha } from "../../utils/ausenciaUtils";
+import { formatearAusencia } from "../../utils/ausenciaUtils";
 
 const AdminAusencias = () => {
   const [ausencias, setAusencias] = useState([]);
@@ -34,7 +34,7 @@ const AdminAusencias = () => {
   if (ausencias.length === 0) return <p className="text-center text-gray-500">No hay ausencias registradas.</p>;
 
   return (
-    <div className=" px-4 py-6 bg-[#fdf6f0]">
+    <div className="px-4 py-6 bg-[#fdf6f0]">
       <h2 className="text-2xl font-bold mb-4 text-[#5d5fef] text-center">Ausencias de Empleados</h2>
 
       {ausenciaSeleccionada ? (
@@ -59,46 +59,40 @@ const AdminAusencias = () => {
             <thead className="bg-[#cce7f6] text-[#34495e] text-sm">
               <tr>
                 <th className="px-4 py-2 text-left">Empleado</th>
-                <th className="px-4 py-2 text-left">Fecha</th>
-                <th className="px-4 py-2 text-left">Horario</th>
+                <th className="px-4 py-2 text-left">Período</th>
                 <th className="px-4 py-2 text-left">Motivo</th>
                 <th className="px-4 py-2 text-left">Estado</th>
+                <th className="px-4 py-2 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {ausencias.map((ausencia) => (
                 <tr
                   key={ausencia.id}
-                  className="hover:bg-[#f0f9ff] cursor-pointer transition"
-                  onClick={() => setAusenciaSeleccionada(ausencia)}
-                  title="Click para editar"
+                  className="hover:bg-[#f0f9ff] transition"
                 >
-                  <td className="px-4 py-2 text-blue-600 border-b">{ausencia.empleado_nombre || "N/A"}</td>
-                  <td className="px-4 py-2 text-blue-600 border-b">
-                    {ausencia.fecha_inicio ? formatearFechaHora(ausencia.fecha_inicio, 'corta') : "N/A"}
+                  <td className="px-4 py-2 text-blue-600 border-b font-medium">
+                    {ausencia.empleado_nombre || "N/A"}
                   </td>
                   <td className="px-4 py-2 text-blue-600 border-b">
-                    {ausencia.fecha_inicio && ausencia.fecha_fin 
-                      ? (() => {
-                          const horaInicio = extraerHoraDeFecha(ausencia.fecha_inicio);
-                          const horaFin = extraerHoraDeFecha(ausencia.fecha_fin);
-                          
-                          console.log("🕐 [MOSTRAR] Conversión de UTC a local:", {
-                            fechaInicioBD: ausencia.fecha_inicio,
-                            fechaFinBD: ausencia.fecha_fin,
-                            horaInicioLocal: horaInicio,
-                            horaFinLocal: horaFin
-                          });
-                          
-                          return horaInicio && horaFin ? `${horaInicio} - ${horaFin}` : "N/A";
-                        })()
-                      : "N/A"}
+                    {formatearAusencia(ausencia)}
                   </td>
-                  <td className="px-4 py-2 text-blue-600 border-b">
+                  <td className="px-4 py-2 text-blue-600 border-b max-w-xs truncate">
                     {ausencia.motivo || "-"}
                   </td>
-                  <td className={`px-4 py-2 border-b font-medium ${parseInt(ausencia.aprobada, 10) === 1 ? "text-green-600" : "text-yellow-700"}`}>
+                  <td className={`px-4 py-2 border-b font-medium ${
+                    parseInt(ausencia.aprobada, 10) === 1 ? "text-green-600" : "text-yellow-700"
+                  }`}>
                     {parseInt(ausencia.aprobada, 10) === 1 ? "Aprobada" : "Desactivada"}
+                  </td>
+                  <td className="px-4 py-2 border-b">
+                    <button
+                      onClick={() => setAusenciaSeleccionada(ausencia)}
+                      className="px-3 py-1 bg-[#fcd34d] text-[#1f2937] rounded hover:bg-[#fbbf24] text-xs"
+                      title="Editar ausencia"
+                    >
+                      Editar
+                    </button>
                   </td>
                 </tr>
               ))}

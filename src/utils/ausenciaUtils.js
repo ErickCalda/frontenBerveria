@@ -12,7 +12,25 @@ const ZONA_HORARIA = 'America/Guayaquil';
  * @returns {Array} Array de objetos con horarios disponibles
  */
 export const generarHorariosDisponibles = (fecha) => {
-  const diaSemana = fecha.getDay(); // 0 = domingo, 1-6 = lunes a sábado
+  // Asegurar que la fecha sea un objeto Date válido
+  let fechaObj;
+  if (typeof fecha === 'string') {
+    // Crear fecha usando UTC para evitar problemas de zona horaria
+    fechaObj = new Date(fecha + 'T12:00:00.000Z');
+  } else {
+    fechaObj = new Date(fecha);
+  }
+  
+  // Validar que la fecha sea válida
+  if (isNaN(fechaObj.getTime())) {
+    console.error('❌ Fecha inválida:', fecha);
+    return [];
+  }
+  
+  // Usar getUTCDay() para obtener el día de la semana de manera consistente
+  const diaSemana = fechaObj.getUTCDay(); // 0 = domingo, 1-6 = lunes a sábado
+  
+  console.log(`🕐 [HORARIOS] Generando horarios para día ${diaSemana} (${fechaObj.toDateString()})`);
   
   let horariosDisponibles = [];
   
@@ -29,6 +47,7 @@ export const generarHorariosDisponibles = (fecha) => {
       { inicio: '13:00', fin: '13:30' },
       { inicio: '13:30', fin: '14:00' }
     ];
+    console.log('🕐 [HORARIOS] Domingo - horarios hasta 14:00');
   } else {
     // Horarios de lunes a sábado
     horariosDisponibles = [
@@ -39,7 +58,6 @@ export const generarHorariosDisponibles = (fecha) => {
       { inicio: '11:15', fin: '11:45' },
       { inicio: '11:45', fin: '12:15' },
       { inicio: '12:15', fin: '12:45' },
-      { inicio: '12:45', fin: '14:15' },
       { inicio: '14:15', fin: '14:45' },
       { inicio: '14:45', fin: '15:15' },
       { inicio: '15:15', fin: '15:45' },
@@ -50,8 +68,10 @@ export const generarHorariosDisponibles = (fecha) => {
       { inicio: '17:45', fin: '18:15' },
       { inicio: '18:15', fin: '18:45' }
     ];
+    console.log('🕐 [HORARIOS] Lunes-Sábado - horarios hasta 18:45');
   }
 
+  console.log(`🕐 [HORARIOS] Total de horarios generados: ${horariosDisponibles.length}`);
   return horariosDisponibles;
 };
 
@@ -170,11 +190,15 @@ export const formatearFechaHora = (fechaHora, formato = 'corta') => {
  * @returns {boolean} True si el horario es válido
  */
 export const validarHorarioTrabajo = (fecha, horaInicio, horaFin) => {
+  console.log("🕐 [HORARIO] Validando horario:", { fecha, horaInicio, horaFin });
+  
   const horariosDisponibles = generarHorariosDisponibles(new Date(fecha));
+  console.log("🕐 [HORARIO] Horarios disponibles:", horariosDisponibles);
   
   // Convertir horas a minutos para comparación
   const inicioMinutos = convertirHoraAMinutos(horaInicio);
   const finMinutos = convertirHoraAMinutos(horaFin);
+  console.log("🕐 [HORARIO] Minutos:", { inicioMinutos, finMinutos });
   
   // Convertir horarios a minutos para facilitar cálculos
   const horariosEnMinutos = horariosDisponibles.map(horario => ({
@@ -184,17 +208,24 @@ export const validarHorarioTrabajo = (fecha, horaInicio, horaFin) => {
     finStr: horario.fin
   }));
   
+  console.log("🕐 [HORARIO] Horarios en minutos:", horariosEnMinutos);
+  
   // Verificar si el rango completo está dentro de algún horario laboral
   // o si se extiende a través de múltiples horarios consecutivos
   let horarioValido = false;
   
   // Primero verificar si está completamente dentro de un horario
   horarioValido = horariosEnMinutos.some(horario => {
-    return inicioMinutos >= horario.inicio && finMinutos <= horario.fin;
+    const dentroDeHorario = inicioMinutos >= horario.inicio && finMinutos <= horario.fin;
+    console.log(`🕐 [HORARIO] Verificando ${horaInicio}-${horaFin} dentro de ${horario.inicioStr}-${horario.finStr}:`, dentroDeHorario);
+    return dentroDeHorario;
   });
+  
+  console.log("🕐 [HORARIO] ¿Está dentro de un horario?:", horarioValido);
   
   // Si no está dentro de un horario, verificar si se extiende a través de múltiples
   if (!horarioValido) {
+    console.log("🕐 [HORARIO] Verificando horarios consecutivos...");
     // Verificar si todos los horarios necesarios están disponibles
     const horariosNecesarios = [];
     let horaActual = inicioMinutos;
@@ -207,7 +238,9 @@ export const validarHorarioTrabajo = (fecha, horaInicio, horaFin) => {
       if (horarioEncontrado) {
         horariosNecesarios.push(horarioEncontrado);
         horaActual = horarioEncontrado.fin;
+        console.log(`🕐 [HORARIO] Encontrado horario: ${horarioEncontrado.inicioStr}-${horarioEncontrado.finStr}`);
       } else {
+        console.log(`🕐 [HORARIO] No se encontró horario para ${convertirMinutosAHora(horaActual)}`);
         break;
       }
     }
@@ -215,9 +248,13 @@ export const validarHorarioTrabajo = (fecha, horaInicio, horaFin) => {
     // Si encontramos todos los horarios necesarios y cubren todo el rango
     if (horaActual >= finMinutos) {
       horarioValido = true;
+      console.log("🕐 [HORARIO] Horarios consecutivos válidos");
+    } else {
+      console.log("🕐 [HORARIO] Horarios consecutivos inválidos");
     }
   }
   
+  console.log("🕐 [HORARIO] Resultado final:", horarioValido);
   return horarioValido;
 };
 
@@ -389,6 +426,244 @@ export const formatearRangoFechas = (fechaInicio, fechaFin) => {
   return `${inicio} - ${fin}`;
 };
 
+/**
+ * Genera opciones de horarios para un selector
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @returns {Array} Array de opciones para selector
+ */
+export const generarOpcionesHorarios = (fecha) => {
+  const horarios = generarHorariosDisponibles(new Date(fecha));
+  
+  return horarios.map((horario, index) => ({
+    id: index,
+    value: `${horario.inicio}-${horario.fin}`,
+    label: `${horario.inicio} - ${horario.fin}`,
+    inicio: horario.inicio,
+    fin: horario.fin
+  }));
+};
+
+/**
+ * Genera opciones de horarios con rangos amplios
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @param {number} duracionMinima - Duración mínima en minutos
+ * @returns {Array} Array de opciones con rangos amplios
+ */
+export const generarOpcionesHorariosAmplios = (fecha, duracionMinima = 30) => {
+  const horarios = generarHorariosDisponibles(new Date(fecha));
+  const opciones = [];
+  
+  // Generar rangos de diferentes duraciones
+  const duraciones = [30, 60, 90, 120, 180].filter(d => d >= duracionMinima); // 30min, 1h, 1.5h, 2h, 3h
+  
+  horarios.forEach((horario, index) => {
+    const inicioMinutos = convertirHoraAMinutos(horario.inicio);
+    
+    duraciones.forEach(duracion => {
+      const finMinutos = inicioMinutos + duracion;
+      const finHora = convertirMinutosAHora(finMinutos);
+      
+      // Verificar si el rango está dentro de los horarios disponibles
+      const rangoValido = horarios.some(h => {
+        const hInicio = convertirHoraAMinutos(h.inicio);
+        const hFin = convertirHoraAMinutos(h.fin);
+        return inicioMinutos >= hInicio && finMinutos <= hFin;
+      });
+      
+      if (rangoValido) {
+        opciones.push({
+          id: `${index}-${duracion}`,
+          value: `${horario.inicio}-${finHora}`,
+          label: `${horario.inicio} - ${finHora} (${duracion} min)`,
+          inicio: horario.inicio,
+          fin: finHora,
+          duracion
+        });
+      }
+    });
+  });
+  
+  return opciones;
+};
+
+/**
+ * Valida si una ausencia es por período largo (días completos)
+ * @param {string} fechaInicio - Fecha de inicio
+ * @param {string} fechaFin - Fecha de fin
+ * @param {string} horaInicio - Hora de inicio (opcional)
+ * @param {string} horaFin - Hora de fin (opcional)
+ * @returns {boolean} True si es ausencia por período largo
+ */
+export const esAusenciaPeriodoLargo = (fechaInicio, fechaFin, horaInicio = null, horaFin = null) => {
+  // Si no hay horas específicas, es período largo
+  if (!horaInicio || !horaFin) {
+    return true;
+  }
+  
+  // Si las fechas son diferentes, es período largo
+  if (fechaInicio !== fechaFin) {
+    return true;
+  }
+  
+  // Si las horas son 00:00-23:59, es período largo
+  if (horaInicio === '00:00' && horaFin === '23:59') {
+    return true;
+  }
+  
+  // Si las horas cubren un rango amplio (más de 6 horas), tratarlo como período largo
+  const inicioMinutos = convertirHoraAMinutos(horaInicio);
+  const finMinutos = convertirHoraAMinutos(horaFin);
+  const duracionHoras = (finMinutos - inicioMinutos) / 60;
+  
+  if (duracionHoras >= 6) {
+    console.log(`🕐 [PERIODO] Rango de ${duracionHoras} horas detectado como período largo`);
+    return true;
+  }
+  
+  return false;
+};
+
+/**
+ * Valida ausencia considerando si es período largo o por horas específicas
+ * @param {string} fechaInicio - Fecha de inicio
+ * @param {string} fechaFin - Fecha de fin
+ * @param {string} horaInicio - Hora de inicio (opcional)
+ * @param {string} horaFin - Hora de fin (opcional)
+ * @returns {boolean} True si la ausencia es válida
+ */
+export const validarAusencia = (fechaInicio, fechaFin, horaInicio = null, horaFin = null) => {
+  console.log("🕐 [VALIDAR] Entrada:", { fechaInicio, fechaFin, horaInicio, horaFin });
+  
+  // Validar que las fechas básicas estén presentes
+  if (!fechaInicio || !fechaFin) {
+    console.log("❌ [VALIDAR] Fechas faltantes");
+    return false;
+  }
+  
+  // Determinar si es período largo
+  const esPeriodoLargo = esAusenciaPeriodoLargo(fechaInicio, fechaFin, horaInicio, horaFin);
+  console.log("🕐 [VALIDAR] Es período largo:", esPeriodoLargo);
+  
+  if (esPeriodoLargo) {
+    // Validación para períodos largos
+    const fechaInicioDate = new Date(fechaInicio + 'T12:00:00.000Z');
+    const fechaFinDate = new Date(fechaFin + 'T12:00:00.000Z');
+    
+    console.log("🕐 [VALIDAR] Fechas parseadas:", { fechaInicioDate, fechaFinDate });
+    
+    // Validar que las fechas sean válidas
+    if (isNaN(fechaInicioDate.getTime()) || isNaN(fechaFinDate.getTime())) {
+      console.log("❌ [VALIDAR] Fechas inválidas");
+      return false;
+    }
+    
+    // Validar que la fecha de fin no sea anterior a la de inicio
+    if (fechaFinDate < fechaInicioDate) {
+      console.log("❌ [VALIDAR] Fecha fin anterior a fecha inicio");
+      return false;
+    }
+    
+    console.log("✅ [VALIDAR] Período largo válido");
+    return true;
+  } else {
+    // Validación para horas específicas
+    if (!horaInicio || !horaFin) {
+      console.log("❌ [VALIDAR] Horas faltantes para ausencia por horas");
+      return false;
+    }
+    
+    const esHorarioValido = validarHorarioTrabajo(fechaInicio, horaInicio, horaFin);
+    console.log("🕐 [VALIDAR] Horario válido:", esHorarioValido);
+    
+    return esHorarioValido;
+  }
+};
+
+/**
+ * Convierte una ausencia a formato UTC considerando el tipo
+ * @param {string} fechaInicio - Fecha de inicio
+ * @param {string} fechaFin - Fecha de fin
+ * @param {string} horaInicio - Hora de inicio (opcional)
+ * @param {string} horaFin - Hora de fin (opcional)
+ * @returns {Object} Objeto con fechas en UTC
+ */
+export const convertirAusenciaAUTC = (fechaInicio, fechaFin, horaInicio = null, horaFin = null) => {
+  let fechaInicioUTC, fechaFinUTC;
+  
+  if (esAusenciaPeriodoLargo(fechaInicio, fechaFin, horaInicio, horaFin)) {
+    // Para períodos largos, usar 00:00 para inicio y 23:59 para fin
+    fechaInicioUTC = `${fechaInicio} 00:00:00`;
+    fechaFinUTC = `${fechaFin} 23:59:59`;
+  } else {
+    // Para horas específicas, convertir usando las funciones existentes
+    fechaInicioUTC = convertirLocalAUTC(fechaInicio, horaInicio);
+    fechaFinUTC = convertirLocalAUTC(fechaFin, horaFin);
+  }
+  
+  return {
+    fecha_inicio: fechaInicioUTC,
+    fecha_fin: fechaFinUTC
+  };
+};
+
+/**
+ * Formatea una ausencia para mostrar en la interfaz
+ * @param {Object} ausencia - Objeto de ausencia
+ * @returns {string} Texto formateado de la ausencia
+ */
+export const formatearAusencia = (ausencia) => {
+  if (!ausencia.fecha_inicio || !ausencia.fecha_fin) {
+    return "N/A";
+  }
+  
+  const fechaInicio = new Date(ausencia.fecha_inicio);
+  const fechaFin = new Date(ausencia.fecha_fin);
+  
+  // Si las fechas son diferentes, mostrar rango de fechas
+  if (fechaInicio.toDateString() !== fechaFin.toDateString()) {
+    return formatearRangoFechas(ausencia.fecha_inicio, ausencia.fecha_fin);
+  }
+  
+  // Si es el mismo día, mostrar horario
+  const horaInicio = extraerHoraDeFecha(ausencia.fecha_inicio);
+  const horaFin = extraerHoraDeFecha(ausencia.fecha_fin);
+  
+  if (horaInicio && horaFin) {
+    return `${formatearFechaHora(ausencia.fecha_inicio, 'corta')} - ${horaInicio} a ${horaFin}`;
+  }
+  
+  return formatearFechaHora(ausencia.fecha_inicio, 'corta');
+};
+
+/**
+ * Función de prueba para verificar horarios
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ */
+export const probarHorarios = (fecha) => {
+  console.log(`🧪 [PRUEBA] Probando horarios para: ${fecha}`);
+  
+  const fechaObj = new Date(fecha + 'T00:00:00');
+  const diaSemana = fechaObj.getDay();
+  const nombreDia = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][diaSemana];
+  
+  console.log(`🧪 [PRUEBA] Día de la semana: ${diaSemana} (${nombreDia})`);
+  console.log(`🧪 [PRUEBA] Fecha objeto:`, fechaObj);
+  
+  const horarios = generarHorariosDisponibles(fecha);
+  
+  console.log(`🧪 [PRUEBA] Horarios generados:`, horarios);
+  console.log(`🧪 [PRUEBA] Primer horario:`, horarios[0]);
+  console.log(`🧪 [PRUEBA] Último horario:`, horarios[horarios.length - 1]);
+  
+  return {
+    fecha,
+    diaSemana,
+    nombreDia,
+    horarios,
+    total: horarios.length
+  };
+};
+
 export default {
   generarHorariosDisponibles,
   convertirHorarioADate,
@@ -402,5 +677,12 @@ export default {
   obtenerFechaActual,
   convertirUTCALocal,
   convertirLocalAUTC,
-  formatearRangoFechas
+  formatearRangoFechas,
+  generarOpcionesHorarios,
+  generarOpcionesHorariosAmplios,
+  esAusenciaPeriodoLargo,
+  validarAusencia,
+  convertirAusenciaAUTC,
+  formatearAusencia,
+  probarHorarios
 }; 
