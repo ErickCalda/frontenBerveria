@@ -226,31 +226,62 @@ export const validarHorarioTrabajo = (fecha, horaInicio, horaFin) => {
   // Si no está dentro de un horario, verificar si se extiende a través de múltiples
   if (!horarioValido) {
     console.log("🕐 [HORARIO] Verificando horarios consecutivos...");
-    // Verificar si todos los horarios necesarios están disponibles
-    const horariosNecesarios = [];
-    let horaActual = inicioMinutos;
     
-    while (horaActual < finMinutos) {
-      const horarioEncontrado = horariosEnMinutos.find(horario => 
-        horaActual >= horario.inicio && horaActual < horario.fin
-      );
+    // Obtener el rango completo de horarios de trabajo del día
+    const primerHorario = horariosEnMinutos[0];
+    const ultimoHorario = horariosEnMinutos[horariosEnMinutos.length - 1];
+    
+    // Verificar si el horario solicitado está dentro del rango total de trabajo
+    if (inicioMinutos >= primerHorario.inicio && finMinutos <= ultimoHorario.fin) {
+      // Verificar que no haya gaps significativos en el rango solicitado
+      // Un gap se considera significativo si es mayor a 1.5 horas (90 minutos)
+      const GAP_MAXIMO = 90; // minutos
       
-      if (horarioEncontrado) {
-        horariosNecesarios.push(horarioEncontrado);
-        horaActual = horarioEncontrado.fin;
-        console.log(`🕐 [HORARIO] Encontrado horario: ${horarioEncontrado.inicioStr}-${horarioEncontrado.finStr}`);
-      } else {
-        console.log(`🕐 [HORARIO] No se encontró horario para ${convertirMinutosAHora(horaActual)}`);
-        break;
+      let hayGapSignificativo = false;
+      let horaActual = inicioMinutos;
+      
+      while (horaActual < finMinutos) {
+        const horarioEncontrado = horariosEnMinutos.find(horario => 
+          horaActual >= horario.inicio && horaActual < horario.fin
+        );
+        
+        if (horarioEncontrado) {
+          // Si encontramos un horario, avanzar al siguiente
+          horaActual = horarioEncontrado.fin;
+          console.log(`🕐 [HORARIO] Encontrado horario: ${horarioEncontrado.inicioStr}-${horarioEncontrado.finStr}`);
+        } else {
+          // Buscar el siguiente horario disponible
+          const siguienteHorario = horariosEnMinutos.find(horario => 
+            horario.inicio > horaActual
+          );
+          
+          if (siguienteHorario) {
+            const gap = siguienteHorario.inicio - horaActual;
+            console.log(`🕐 [HORARIO] Gap encontrado: ${convertirMinutosAHora(horaActual)} a ${siguienteHorario.inicioStr} (${gap} minutos)`);
+            
+            if (gap > GAP_MAXIMO) {
+              console.log(`🕐 [HORARIO] Gap demasiado grande: ${gap} minutos`);
+              hayGapSignificativo = true;
+              break;
+            }
+            
+            // Avanzar al siguiente horario
+            horaActual = siguienteHorario.inicio;
+          } else {
+            // No hay más horarios disponibles
+            break;
+          }
+        }
       }
-    }
-    
-    // Si encontramos todos los horarios necesarios y cubren todo el rango
-    if (horaActual >= finMinutos) {
-      horarioValido = true;
-      console.log("🕐 [HORARIO] Horarios consecutivos válidos");
+      
+      if (!hayGapSignificativo && horaActual >= finMinutos) {
+        horarioValido = true;
+        console.log("🕐 [HORARIO] Horarios consecutivos válidos (con gaps permitidos)");
+      } else {
+        console.log("🕐 [HORARIO] Horarios consecutivos inválidos (gap demasiado grande)");
+      }
     } else {
-      console.log("🕐 [HORARIO] Horarios consecutivos inválidos");
+      console.log("🕐 [HORARIO] Horario fuera del rango de trabajo del día");
     }
   }
   
