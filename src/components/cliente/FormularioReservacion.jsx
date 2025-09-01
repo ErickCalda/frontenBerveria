@@ -19,8 +19,6 @@ export default function FormularioReservacion({
   formHorario,
   setFormHorario,
   handleSubmit,
-  setError,
-  clearError,
 }) {
   const { user } = useContext(AuthContext);
 
@@ -137,24 +135,7 @@ const selectServicio = (id) => {
 
 
 
-const handleConfirmarReserva = async (e) => {
-  e.preventDefault();
 
-  clearError && clearError(); // Si tienes esta función para limpiar errores
-
-  const cita = await handleSubmit(e); // Tu función handleSubmit debe devolver el objeto cita o null/falsy si falla
-
-  if (cita) {
-    setCitaCreada(cita);
-    setModalVisible(true);
-  } else {
-    setError &&
-      setError((prev) => ({
-        ...prev,
-        general: "No se pudo crear la cita. Intenta nuevamente.",
-      }));
-  }
-};
 
 
 const topRef = useRef(null);
@@ -373,28 +354,26 @@ Muchas gracias.`;
       Por favor llegar 10 minutos antes de la hora agendada, si se retrasa perderá su cita y el 50% de su valor cancelado.
     </p>
   </div>
-</div>
-<button
-  onClick={async (e) => {
-    e.preventDefault();
-    try {
-      await handleSubmit(e); // Esperar que termine y lance error si falla
+  </div>
+  
+  <button
+    onClick={async (e) => {
+      e.preventDefault();
+      try {
+        await handleSubmit(e); // Esperar que termine y lance error si falla
 
-      // Si llega aquí, no hubo error
-      const newWindow = window.open(" ", "_blank");
-      setTimeout(() => {
+        // Si llega aquí, no hubo error - abrir WhatsApp directamente
         const mensajePersonalizado = generarMensajeWhatsApp();
-        newWindow.location.href = `https://wa.me/593982945646?text=${mensajePersonalizado}`;
-      }, 3000);
-    } catch (error) {
-      // Aquí puedes manejar el error si quieres, pero NO abrirás el link
-      console.log("No se abrió WhatsApp porque ocurrió un error en la reserva.");
-    }
-  }}
-  className="inline-block bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-8 py-3 mb-10 text-white font-semibold rounded-lg shadow-lg text-base"
->
-  Notificar pago por WhatsApp
-</button>
+        window.open(`https://wa.me/593982945646?text=${mensajePersonalizado}`, "_blank");
+      } catch {
+        // Aquí puedes manejar el error si quieres, pero NO abrirás el link
+        console.log("No se abrió WhatsApp porque ocurrió un error en la reserva.");
+      }
+    }}
+    className="inline-block bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-8 py-3 mb-10 text-white font-semibold rounded-lg shadow-lg text-base"
+  >
+    Notificar pago por WhatsApp
+  </button>
 
 
 
