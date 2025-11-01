@@ -35,7 +35,7 @@ const AdminAusencias = () => {
 
   return (
     <div className="px-4 py-6 bg-[#fdf6f0]">
-      <h2 className="text-2xl font-bold mb-4 text-[#5d5fef] text-center">Ausencias de Empleados</h2>
+      <h2 className="text-2xl font-bold mb-4 text-[#5d5fef] text-center">Ausencias de Barberos</h2>
 
       {ausenciaSeleccionada ? (
         <>
@@ -58,7 +58,7 @@ const AdminAusencias = () => {
           <table className="min-w-full bg-white rounded shadow-md">
             <thead className="bg-[#cce7f6] text-[#34495e] text-sm">
               <tr>
-                <th className="px-4 py-2 text-left">Empleado</th>
+                <th className="px-4 py-2 text-left">Barbero</th>
                 <th className="px-4 py-2 text-left">Período</th>
                 <th className="px-4 py-2 text-left">Motivo</th>
                 <th className="px-4 py-2 text-left">Estado</th>

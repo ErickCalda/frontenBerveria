@@ -412,7 +412,7 @@ const CitaCard = React.memo(({ cita, estados, actualizarEstado, actualizando }) 
       </div>
 
       <p><strong className="text-[#d4af37] select-none">Cliente:</strong> {cita.cliente_nombre}</p>
-      <p><strong className="text-[#d4af37] select-none">Empleado:</strong> {cita.empleado_nombre}</p>
+      <p><strong className="text-[#d4af37] select-none">Barbero:</strong> {cita.empleado_nombre}</p>
       <p><strong className="text-[#d4af37] select-none">Servicios:</strong> {cita.servicios}</p>
       <p>
         <strong className="text-[#d4af37] select-none">Hora:</strong>{" "}

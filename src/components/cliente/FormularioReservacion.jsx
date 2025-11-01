@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
+import LoadingSpinner from "../ui/LoadingSpinner";
+import LoadingOverlay from "../ui/LoadingOverlay";
 
 import { Info } from "lucide-react";
 
@@ -21,6 +23,10 @@ export default function FormularioReservacion({
   handleSubmit,
 }) {
   const { user } = useContext(AuthContext);
+  
+  // Estado para el loading del botón de WhatsApp
+  const [isLoadingWhatsApp, setIsLoadingWhatsApp] = useState(false);
+  const [errorReserva, setErrorReserva] = useState(null);
 
 
 
@@ -162,7 +168,14 @@ Muchas gracias.`;
   
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 " ref={topRef}>
+    <>
+      <LoadingOverlay 
+        isVisible={isLoadingWhatsApp}
+        message="Procesando tu reserva"
+        subMessage="Estamos creando tu cita y preparando el enlace de WhatsApp..."
+      />
+      
+      <div className="min-h-screen w-full bg-gradient-to-r bg-[#1C1C1C] text-white py-8 " ref={topRef}>
       <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-screen-2xl mx-auto ">
        <div className="bg-zinc-800 rounded-xl shadow-xl p-6 w-full">
             <h3 className="text-white text-xl mb-3 border-b border-zinc-600 pb-2">Barberos</h3>
@@ -359,20 +372,43 @@ Muchas gracias.`;
   <button
     onClick={async (e) => {
       e.preventDefault();
+      setIsLoadingWhatsApp(true);
+      setErrorReserva(null);
+      
       try {
         await handleSubmit(e); // Esperar que termine y lance error si falla
 
         // Si llega aquí, no hubo error - abrir WhatsApp directamente
         const mensajePersonalizado = generarMensajeWhatsApp();
         window.open(`https://wa.me/593982945646?text=${mensajePersonalizado}`, "_blank");
-      } catch {
-        // Aquí puedes manejar el error si quieres, pero NO abrirás el link
-        console.log("No se abrió WhatsApp porque ocurrió un error en la reserva.");
+      } catch (error) {
+        // Manejar el error y mostrar mensaje al usuario
+        console.log("Error en la reserva:", error);
+        setErrorReserva(
+          error.response?.data?.mensaje || 
+          "Hubo un error al procesar tu reserva. Por favor intenta nuevamente."
+        );
+      } finally {
+        setIsLoadingWhatsApp(false);
       }
     }}
-    className="inline-block bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-8 py-3 mb-10 text-white font-semibold rounded-lg shadow-lg text-base"
+    disabled={isLoadingWhatsApp}
+    className={`inline-block px-8 py-3 mb-10 text-white font-semibold rounded-lg shadow-lg text-base transition-all duration-300 ${
+      isLoadingWhatsApp 
+        ? "bg-gray-500 cursor-not-allowed opacity-70" 
+        : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:shadow-xl"
+    }`}
   >
-    Notificar pago por WhatsApp
+    {isLoadingWhatsApp ? (
+      <LoadingSpinner 
+        size="sm" 
+        color="white" 
+        text="Procesando reserva..." 
+        className="justify-center"
+      />
+    ) : (
+      "Notificar pago por WhatsApp"
+    )}
   </button>
 
 
@@ -426,6 +462,24 @@ Muchas gracias.`;
 
 
 
+      {/* Mostrar error de reserva si existe */}
+      {errorReserva && (
+        <div className="mt-6 bg-red-900/30 border border-red-500 rounded-lg p-4 max-w-3xl mx-auto">
+          <div className="flex items-center mb-2">
+            <span className="text-red-400 font-bold text-sm">❌ Error en la reserva</span>
+          </div>
+          <p className="text-red-300 text-sm">
+            {errorReserva}
+          </p>
+          <button
+            onClick={() => setErrorReserva(null)}
+            className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {/* Mostrar errores generales */}
       {Object.entries(errores).map(
         ([key, errorMsg]) =>
@@ -439,5 +493,6 @@ Muchas gracias.`;
           )
       )}
     </div>
+    </>
   );
 }

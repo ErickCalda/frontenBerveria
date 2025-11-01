@@ -1,3 +1,24 @@
+
+
+
+
+
+const getImageSrc = (imagen = "") => {
+  if (!imagen) return "";
+  // si ya viene absoluta (http/https), respétala
+  if (/^https?:\/\//i.test(imagen)) return imagen;
+
+  // normaliza el leading slash
+  const path = imagen.startsWith("/") ? imagen : `/${imagen}`;
+
+  // usa siempre el origin actual (maneja http/https y con/sin www)
+  return `${window.location.origin}${path}`;
+};
+
+
+
+
+
 export default function ServicioCard({ servicio, onReservar }) {
   return (
     <div
@@ -9,7 +30,7 @@ export default function ServicioCard({ servicio, onReservar }) {
     >
       {servicio.imagen ? (
         <img
-          src={servicio.imagen}
+          src={getImageSrc(servicio.imagen)}
           alt={servicio.nombre}
           className="w-full h-48 object-cover rounded-md shadow-md"
         />

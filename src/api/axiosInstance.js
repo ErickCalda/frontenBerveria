@@ -1,7 +1,9 @@
 import axios from "axios";
+import { API_BASE_URL, API_TIMEOUT } from "../config/api.js";
 
 const axiosInstance = axios.create({
-  baseURL: "https://barbershor2.onrender.com/api",
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
 });
 
 // ⛑ Añade el token automáticamente antes de cada request
